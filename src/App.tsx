@@ -2,6 +2,7 @@ import { useState } from 'react'
 import TimerView from './views/TimerView'
 import ParkView from './views/ParkView'
 import PointsDisplay from './components/PointsDisplay'
+import EggReveal from './components/EggReveal'
 
 type Tab = 'timer' | 'park'
 
@@ -37,6 +38,8 @@ export default function App() {
             <span className="text-xs font-inter font-medium">Parc</span>
           </button>
         </nav>
+
+        <EggReveal />
       </div>
     </div>
   )

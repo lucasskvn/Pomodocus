@@ -12,12 +12,12 @@ export interface DinoInstance {
 }
 
 const EGG_PRICES: Record<EggType, number> = {
-  common: 15,
-  rare: 40,
-  legendary: 100,
+  common: 1,
+  rare: 1,
+  legendary: 1,
 }
 
-export const WORK_DURATION = 25 * 60 * 1000
+export const WORK_DURATION = 1 * 60 * 1000
 export const BREAK_DURATION = 5 * 60 * 1000
 
 interface GameState {
