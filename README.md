@@ -9,6 +9,9 @@ Une application gamifiée de **Pomodoro** avec des dinosaures collectibles ! Com
 - 3 présets intégrés : Classique (25/5), Deep Work (50/10), Sprint (15/3)
 - Sauvegarde de 3 présets personnalisés
 - Notifications audio et notifications du navigateur à la fin des sessions
+- **Liste de tâches personnalisable** : Ajoute, coche et supprime des tâches pendant ta session
+  - Persiste pendant ta session Pomodoro
+  - Affichage du nombre de tâches complétées
 
 ### 🦕 **Parc de Dinosaures**
 - Collectionne 10 dinosaures uniques avec animations SVG détaillées
@@ -41,18 +44,37 @@ Une application gamifiée de **Pomodoro** avec des dinosaures collectibles ! Com
 - Clique pour réclamer tes récompenses
 
 ### 🎨 **Personnalisation**
-- **4 fonds pour l'app entière** :
+- **Fonds du Timer** (4 options) :
   - Défaut (noir classique)
   - Gradient vert/bleu
   - Sombre semi-transparent
   - **Personnalisé** (upload une image)
-- Les images s'affichent en full screen avec effet parallax
+  - Les images s'affichent en full screen avec effet parallax
+
+- **Thèmes Saisonniers** (achat permanent) :
+  - 🌿 Jungle (défaut, gratuit)
+  - ❄️ Noël (ciel sombre, sol blanc)
+  - 🎃 Halloween (ciel noir, sol marron)
+  - 🌸 Printemps (ciel bleu clair, sol vert)
+  - ☀️ Été (ciel doré, sol jaune)
+  - **Prix** : 1000 🪙 par thème (achat unique, puis activation gratuite)
+
+- **Décoration du Parc** :
+  - 🌳 Arbres (Chêne, Palmier)
+  - 🪨 Rochers
+  - 🌷 Fleurs (Tulipe, Rose)
+  - 🍄 Champignon magique
+  - Chaque décoration s'affiche avec position/rotation aléatoire
 
 ### 📱 **Interface**
 - Design responsive avec mode sombre
 - 5 onglets de navigation : Timer, Boutique, Parc, Historique, Quêtes
-- Stats affichées à droite du timer
-- Réglages repliables à gauche (travail, pause, présets, fonds)
+- **Timer central** avec :
+  - Chrono circulaire avec progress bar
+  - Boutons Start/Pause/Reset
+  - **Liste de tâches** intégrée (ajouter, cocher, supprimer)
+- Stats affichées à droite du timer (sessions, streak, temps total)
+- Réglages repliables à gauche (travail, pause, présets, fonds d'écran)
 
 ## 🎮 Gameplay
 
