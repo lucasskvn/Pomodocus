@@ -182,12 +182,6 @@ export default function DinoPark() {
       <Cloud top="12%" delay={-20} duration={70} scale={0.9} />
       <Cloud top="4%"  delay={-40} duration={90} scale={1.1} />
 
-      {/* A — Back trees (small, faded) */}
-      <span className="absolute pointer-events-none select-none" style={{ top: '5%', left: '5%',  fontSize: 28, opacity: 0.35 }}>🌴</span>
-      <span className="absolute pointer-events-none select-none" style={{ top: '5%', right: '5%', fontSize: 28, opacity: 0.35 }}>🌴</span>
-      <span className="absolute pointer-events-none select-none" style={{ top: '8%', left: '22%', fontSize: 22, opacity: 0.25 }}>🌳</span>
-      <span className="absolute pointer-events-none select-none" style={{ top: '6%', right: '20%', fontSize: 20, opacity: 0.22 }}>🌳</span>
-
       {/* E — Pond */}
       <Pond />
 
@@ -233,17 +227,13 @@ export default function DinoPark() {
 
       {/* Collect all bar */}
       <div
-        className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-5 py-3"
+        className="absolute bottom-0 left-0 right-0 flex items-center gap-3 px-5 py-3"
         style={{ zIndex: 30, background: 'rgba(10,26,12,0.75)', backdropFilter: 'blur(6px)', borderTop: '1px solid rgba(74,222,128,0.12)' }}
       >
-        <span className="font-inter text-sm text-green-300/70">
-          En attente : <span className="font-fredoka font-semibold text-accent-amber">{totalPending.toLocaleString()} 🪙</span>
-        </span>
-
         <button
           onClick={handleCollectAll}
           disabled={totalPending === 0}
-          className="px-5 py-2 rounded-full font-fredoka text-base font-semibold transition-all"
+          className="px-5 py-2 rounded-full font-fredoka text-base font-semibold transition-all flex-shrink-0"
           style={
             totalPending > 0
               ? { background: 'linear-gradient(135deg,#fbbf24,#f59e0b)', color: '#1a0a00', boxShadow: '0 2px 12px rgba(251,191,36,0.45)' }
@@ -252,6 +242,10 @@ export default function DinoPark() {
         >
           Tout collecter
         </button>
+
+        <span className="font-inter text-sm text-green-300/70">
+          En attente : <span className="font-fredoka font-semibold text-accent-amber">{totalPending.toLocaleString()} 🪙</span>
+        </span>
       </div>
 
       {/* +X animation on collect all */}

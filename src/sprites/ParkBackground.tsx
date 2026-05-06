@@ -4,8 +4,8 @@ export function ParkBackground({ width, height }: { width: number; height: numbe
       preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0 }}>
       <defs>
         <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0b2e10"/>
-          <stop offset="100%" stopColor="#1a5c20"/>
+          <stop offset="0%" stopColor="#1e3a8a"/>
+          <stop offset="100%" stopColor="#3b82f6"/>
         </linearGradient>
         <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#2d8a35"/>
@@ -47,20 +47,6 @@ export function ParkBackground({ width, height }: { width: number; height: numbe
       <ellipse cx={width * 0.46} cy={height * 0.57} rx={width * 0.03} ry={height * 0.015}
         fill="rgba(255,255,255,0.15)" transform="rotate(-15, 460, 340)"/>
       <text x={width * 0.47} y={height * 0.63} fontSize="18" opacity="0.7">🪷</text>
-
-      {/* Background trees (far, small) */}
-      {[0.08, 0.18, 0.78, 0.88, 0.25, 0.72].map((rx, i) => {
-        const tx = width * rx
-        const ty = height * 0.28
-        const s = 0.5 + (i % 3) * 0.1
-        return (
-          <g key={i} transform={`translate(${tx}, ${ty}) scale(${s})`} opacity="0.4">
-            <rect x="-5" y="0" width="10" height="40" rx="4" fill="#5d3a1a"/>
-            <ellipse cx="0" cy="-10" rx="22" ry="28" fill="#1a6b28"/>
-            <ellipse cx="0" cy="-18" rx="15" ry="20" fill="#2a8a38" opacity="0.7"/>
-          </g>
-        )
-      })}
 
       {/* Mid-ground rocks */}
       <ellipse cx={width * 0.15} cy={height * 0.52} rx="14" ry="9" fill="#6a6050" opacity="0.6"/>

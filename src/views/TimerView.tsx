@@ -45,15 +45,27 @@ export default function TimerView() {
       {/* Zone centrale */}
       <div className="flex flex-col items-center justify-center flex-1 min-w-0 gap-6 py-6">
         <PomodoroTimer />
-        <StatsCards />
       </div>
 
-      {/* Spacer miroir — compense le panneau gauche pour centrer le timer */}
+      {/* Panneau droit — Stats */}
       <motion.div
         animate={{ width: settingsOpen ? SETTINGS_WIDTH : COLLAPSED_WIDTH }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="flex-shrink-0"
-      />
+        className="flex-shrink-0 border-l border-white/10 overflow-hidden flex flex-col items-center justify-center p-4"
+      >
+        <AnimatePresence>
+          {settingsOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <StatsCards />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </div>
   )
 }

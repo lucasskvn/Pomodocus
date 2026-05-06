@@ -4,6 +4,32 @@ import { useGameStore } from '../store/useGameStore'
 import { DINO_MAP, RARITY_LABEL } from '../data/dinosaurs'
 import { dinoLevelUpCost, dinoSellPrice, dinoProductionMultiplier } from '../utils/gameLogic'
 
+import { DinoParasaurolophus } from '../sprites/DinoParasaurolophus'
+import { DinoStegosaurus } from '../sprites/DinoStegosaurus'
+import { DinoAnkylosaurus } from '../sprites/DinoAnkylosaurus'
+import { DinoTriceratops } from '../sprites/DinoTriceratops'
+import { DinoVelociraptor } from '../sprites/DinoVelociraptor'
+import { DinoSpinosaurus } from '../sprites/DinoSpinosaurus'
+import { DinoTRex } from '../sprites/DinoTRex'
+import { DinoBrachiosaurus } from '../sprites/DinoBrachiosaurus'
+import { DinoPterodactyl } from '../sprites/DinoPterodactyl'
+import { DinoAnkylosaurusClub } from '../sprites/DinoAnkylosaurusClub'
+
+type SpriteComponent = (props: { frame: 0 | 1 | 2; flipped?: boolean }) => React.JSX.Element
+
+const SPRITE_MAP: Record<string, SpriteComponent> = {
+  parasaurolophus: DinoParasaurolophus,
+  stegosaurus: DinoStegosaurus,
+  ankylosaurus: DinoAnkylosaurus,
+  triceratops: DinoTriceratops,
+  velociraptor: DinoVelociraptor,
+  spinosaurus: DinoSpinosaurus,
+  trex: DinoTRex,
+  brachiosaurus: DinoBrachiosaurus,
+  pterodactyl: DinoPterodactyl,
+  ankylosaurusclub: DinoAnkylosaurusClub,
+}
+
 const RARITY_COLOR: Record<string, string> = {
   common: '#94a3b8',
   rare: '#60a5fa',
@@ -43,6 +69,7 @@ export default function DinoModal({ instanceId, onClose }: Props) {
   if (!instance) return null
 
   const dino          = DINO_MAP[instance.dinoId]
+  const SpriteComponent = SPRITE_MAP[instance.dinoId]
   const level         = instance.level ?? 0
   const levelMult     = dinoProductionMultiplier(level)
   const baseRate      = dino.coinsPerHour
@@ -102,7 +129,9 @@ export default function DinoModal({ instanceId, onClose }: Props) {
 
         {/* Header */}
         <div className="flex items-center gap-4">
-          <span className="text-5xl">{dino.emoji}</span>
+          <div className="w-20 h-20 flex items-center justify-center flex-shrink-0">
+            {SpriteComponent && <SpriteComponent frame={0} />}
+          </div>
           <div className="flex-1 min-w-0">
             {editing ? (
               <input

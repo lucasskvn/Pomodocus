@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { v4 as uuidv4 } from 'uuid'
 import { DINOSAURS, DINO_MAP } from '../data/dinosaurs'
+import { DAILY_QUESTS } from '../data/quests'
 import { calculatePending, rollRarity, workReward, breakReward, computeSessionStats, slotUpgradeCost, yieldUpgradeCost, dinoLevelUpCost, dinoSellPrice, dinoProductionMultiplier, type EggType } from '../utils/gameLogic'
 
 export interface TimerPreset {
@@ -45,6 +46,11 @@ interface GameState {
   slotUpgradeLevel: number
   yieldUpgradeLevel: number
   presets: TimerPreset[]
+  sessionLog: Array<{ date: string; sessions: number; minutes: number }>
+  claimedQuests: string[]
+  lastQuestDate: string
+  timerBackground: 'default' | 'gradient' | 'solid' | 'custom'
+  timerBackgroundImage: string | null
 }
 
 interface GameActions {
@@ -68,6 +74,10 @@ interface GameActions {
   applyPreset: (id: string) => void
   saveCustomPreset: (slot: 0 | 1 | 2, name: string, workMinutes: number, breakMinutes: number) => void
   deleteCustomPreset: (slot: 0 | 1 | 2) => void
+  claimQuest: (questId: string) => void
+  checkQuestDateReset: () => void
+  setTimerBackground: (bg: 'default' | 'gradient' | 'solid' | 'custom') => void
+  setTimerBackgroundImage: (image: string | null) => void
 }
 
 export const useGameStore = create<GameState & GameActions>()(
@@ -97,6 +107,11 @@ export const useGameStore = create<GameState & GameActions>()(
         { id: 'custom-1', name: '',          workMinutes: 25, breakMinutes: 5  },
         { id: 'custom-2', name: '',          workMinutes: 25, breakMinutes: 5  },
       ],
+      sessionLog: [],
+      claimedQuests: [],
+      lastQuestDate: '',
+      timerBackground: 'default',
+      timerBackgroundImage: null,
 
       startTimer: () => {
         const { remainingAtPause, pomodoroPhase, workMinutes, breakMinutes } = get()
@@ -131,12 +146,19 @@ export const useGameStore = create<GameState & GameActions>()(
       completePomodoro: () => {
         const { workMinutes, lastSessionDate, streak, todaySessions, totalFocusMinutes } = get()
         const stats = computeSessionStats(lastSessionDate, streak, todaySessions, totalFocusMinutes, workMinutes)
+        const todayKey = new Date().toISOString().slice(0, 10)
+        const log = get().sessionLog ?? []
+        const idx = log.findIndex(r => r.date === todayKey)
+        const updatedLog = idx >= 0
+          ? log.map((r, i) => i === idx ? { ...r, sessions: r.sessions + 1, minutes: r.minutes + workMinutes } : r)
+          : [...log, { date: todayKey, sessions: 1, minutes: workMinutes }]
         set((s) => ({
           pomodoroPhase: 'break',
           docuPoints: s.docuPoints + workReward(s.workMinutes),
           sessionsCompleted: s.sessionsCompleted + 1,
           timerStartedAt: Date.now(),
           remainingAtPause: null,
+          sessionLog: updatedLog,
           ...stats,
         }))
       },
@@ -306,7 +328,49 @@ export const useGameStore = create<GameState & GameActions>()(
         }))
       },
 
+      checkQuestDateReset: () => {
+        const today = new Date().toISOString().slice(0, 10)
+        const { lastQuestDate } = get()
+        if (lastQuestDate !== today) {
+          set({ claimedQuests: [], lastQuestDate: today })
+        }
+      },
+
+      claimQuest: (questId: string) => {
+        const today = new Date().toISOString().slice(0, 10)
+        const { lastQuestDate, claimedQuests, todaySessions, streak } = get()
+
+        if (lastQuestDate !== today) {
+          set({ claimedQuests: [], lastQuestDate: today })
+        }
+
+        if (claimedQuests.includes(questId)) return
+
+        const quest = DAILY_QUESTS.find(q => q.id === questId)
+        if (!quest) return
+
+        let canClaim = false
+        if (quest.type === 'sessions') canClaim = todaySessions >= quest.target
+        if (quest.type === 'streak') canClaim = streak >= quest.target
+
+        if (!canClaim) return
+
+        set((s) => ({
+          claimedQuests: [...s.claimedQuests, questId],
+          coins: s.coins + (quest.reward.coins || 0),
+          docuPoints: s.docuPoints + (quest.reward.docuPoints || 0),
+        }))
+      },
+
       cheat: () => set((s) => ({ docuPoints: s.docuPoints + 999, coins: s.coins + 9999 })),
+
+      setTimerBackground: (bg: 'default' | 'gradient' | 'solid' | 'custom') => {
+        set({ timerBackground: bg })
+      },
+
+      setTimerBackgroundImage: (image: string | null) => {
+        set({ timerBackgroundImage: image })
+      },
     }),
     { name: 'pomodocus-store' },
   ),
