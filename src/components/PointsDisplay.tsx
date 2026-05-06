@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/useGameStore'
-import { calculatePending } from '../utils/gameLogic'
+import { calculatePending, dinoProductionMultiplier } from '../utils/gameLogic'
 import { DINO_MAP } from '../data/dinosaurs'
 
 export default function PointsDisplay() {
@@ -16,7 +16,8 @@ export default function PointsDisplay() {
       const multiplier = 1 + yieldUpgradeLevel * 0.05
       const pending = ownedDinos.reduce((sum, d) => {
         const dino = DINO_MAP[d.dinoId]
-        return sum + Math.floor(calculatePending(d.lastCollectedAt, dino.coinsPerHour) * multiplier)
+        const levelMult = dinoProductionMultiplier(d.level ?? 0)
+        return sum + Math.floor(calculatePending(d.lastCollectedAt, dino.coinsPerHour) * multiplier * levelMult)
       }, 0)
       setDisplayCoins(coins + pending)
     }

@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/useGameStore'
 import { DINO_MAP } from '../data/dinosaurs'
-import { calculatePending } from '../utils/gameLogic'
+import { calculatePending, dinoProductionMultiplier } from '../utils/gameLogic'
 import DinoRoaming from './DinoRoaming'
+import DinoModal from './DinoModal'
 import { ParkBackground } from '../sprites/ParkBackground'
 
 /* ── Clouds ─────────────────────────────────────────────── */
@@ -91,24 +92,28 @@ function GrassPatches() {
 export default function DinoPark() {
   const ownedDinos  = useGameStore((s) => s.ownedDinos)
   const collectAll  = useGameStore((s) => s.collectAll)
+  const yieldUpgradeLevel = useGameStore((s) => s.yieldUpgradeLevel)
 
   const [totalPending, setTotalPending] = useState(0)
   const [flyAmount, setFlyAmount]       = useState<number | null>(null)
+  const [selectedDinoId, setSelectedDinoId] = useState<string | null>(null)
   const flyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /* Recalculate total pending every second */
   useEffect(() => {
     const calc = () => {
+      const yieldMult = 1 + yieldUpgradeLevel * 0.05
       const total = ownedDinos.reduce((sum, d) => {
         const dino = DINO_MAP[d.dinoId]
-        return sum + Math.floor(calculatePending(d.lastCollectedAt, dino.coinsPerHour))
+        const levelMult = dinoProductionMultiplier(d.level ?? 0)
+        return sum + Math.floor(calculatePending(d.lastCollectedAt, dino.coinsPerHour) * yieldMult * levelMult)
       }, 0)
       setTotalPending(total)
     }
     calc()
     const id = setInterval(calc, 1000)
     return () => clearInterval(id)
-  }, [ownedDinos])
+  }, [ownedDinos, yieldUpgradeLevel])
 
   const handleCollectAll = () => {
     if (totalPending === 0) return
@@ -212,7 +217,11 @@ export default function DinoPark() {
       {/* Dinos (above ground elements) */}
       <div className="absolute inset-0" style={{ zIndex: 10 }}>
         {ownedDinos.map((instance) => (
-          <DinoRoaming key={instance.id} instance={instance} />
+          <DinoRoaming
+            key={instance.id}
+            instance={instance}
+            onClick={() => setSelectedDinoId(instance.id)}
+          />
         ))}
       </div>
 
@@ -259,6 +268,17 @@ export default function DinoPark() {
           >
             +{flyAmount.toLocaleString()} 🪙
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Dino detail modal */}
+      <AnimatePresence>
+        {selectedDinoId && (
+          <DinoModal
+            key={selectedDinoId}
+            instanceId={selectedDinoId}
+            onClose={() => setSelectedDinoId(null)}
+          />
         )}
       </AnimatePresence>
     </div>
