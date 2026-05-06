@@ -24,6 +24,46 @@ export function formatTime(ms: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
+export interface SessionStats {
+  lastSessionDate: string
+  streak: number
+  todaySessions: number
+  totalFocusMinutes: number
+}
+
+export function computeSessionStats(
+  lastSessionDate: string,
+  streak: number,
+  todaySessions: number,
+  totalFocusMinutes: number,
+  workMinutes: number,
+): SessionStats {
+  const today = new Date().toISOString().slice(0, 10)
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+  const newTotal = totalFocusMinutes + workMinutes
+
+  if (lastSessionDate === today) {
+    return { lastSessionDate: today, streak, todaySessions: todaySessions + 1, totalFocusMinutes: newTotal }
+  }
+  if (lastSessionDate === yesterday) {
+    return { lastSessionDate: today, streak: streak + 1, todaySessions: 1, totalFocusMinutes: newTotal }
+  }
+  return { lastSessionDate: today, streak: 1, todaySessions: 1, totalFocusMinutes: newTotal }
+}
+
+export function formatFocusTime(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`
+  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`
+}
+
+export function workReward(minutes: number): number {
+  return Math.round(15 * Math.pow(minutes / 25, 0.65))
+}
+
+export function breakReward(minutes: number): number {
+  return Math.round(2 * Math.pow(minutes / 5, 0.65))
+}
+
 export function rollRarity(eggType: EggType): Rarity {
   const probs = EGG_PROBABILITIES[eggType]
   const roll = Math.random()

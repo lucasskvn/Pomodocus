@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { useGameStore, WORK_DURATION, BREAK_DURATION } from '../store/useGameStore'
+import { useGameStore } from '../store/useGameStore'
 import { getRemaining, formatTime } from '../utils/gameLogic'
 
-const RADIUS = 90
+const RADIUS = 130
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 export default function PomodoroTimer() {
@@ -15,8 +15,10 @@ export default function PomodoroTimer() {
   const resetTimer = useGameStore((s) => s.resetTimer)
   const completePomodoro = useGameStore((s) => s.completePomodoro)
   const completeBreak = useGameStore((s) => s.completeBreak)
+  const workMinutes = useGameStore((s) => s.workMinutes)
+  const breakMinutes = useGameStore((s) => s.breakMinutes)
 
-  const duration = pomodoroPhase === 'break' ? BREAK_DURATION : WORK_DURATION
+  const duration = (pomodoroPhase === 'break' ? breakMinutes : workMinutes) * 60 * 1000
 
   const [remaining, setRemaining] = useState(() => {
     if (timerStartedAt !== null) return getRemaining(timerStartedAt, duration)
@@ -66,44 +68,41 @@ export default function PomodoroTimer() {
       </div>
 
       <div className="relative">
-        <svg width="260" height="260" viewBox="0 0 260 260">
-          {/* Glow effect */}
+        <svg width="340" height="340" viewBox="0 0 340 340">
           <defs>
             <filter id="glow">
-              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feGaussianBlur stdDeviation="5" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
           </defs>
-          {/* Track */}
           <circle
-            cx="130" cy="130" r={RADIUS}
+            cx="170" cy="170" r={RADIUS}
             fill="none"
             stroke="#1e2d3d"
-            strokeWidth="10"
+            strokeWidth="12"
           />
-          {/* Progress */}
           <circle
-            cx="130" cy="130" r={RADIUS}
+            cx="170" cy="170" r={RADIUS}
             fill="none"
             stroke={phaseColor}
-            strokeWidth="10"
+            strokeWidth="12"
             strokeLinecap="round"
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={strokeDashoffset}
-            transform="rotate(-90 130 130)"
+            transform="rotate(-90 170 170)"
             filter="url(#glow)"
             style={{ transition: 'stroke-dashoffset 0.5s linear' }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-fredoka text-6xl font-bold text-white tracking-tight">
+          <span className="font-fredoka text-7xl font-bold text-white tracking-tight">
             {formatTime(remaining)}
           </span>
           <span
-            className="font-inter text-sm font-semibold tracking-widest mt-2"
+            className="font-inter text-base font-semibold tracking-widest mt-2"
             style={{ color: phaseColor }}
           >
             {phaseLabel}
