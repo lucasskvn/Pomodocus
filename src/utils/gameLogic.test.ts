@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { calculatePending, getRemaining, formatTime, rollRarity } from './gameLogic'
+import { calculatePending, getRemaining, formatTime, rollRarity, workReward, breakReward, computeSessionStats, formatFocusTime } from './gameLogic'
 
 describe('calculatePending', () => {
   it('retourne les coins gagnés depuis lastCollectedAt', () => {
@@ -72,5 +72,76 @@ describe('rollRarity', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
     expect(rollRarity('legendary')).toBe('epic')
     vi.restoreAllMocks()
+  })
+})
+
+describe('computeSessionStats', () => {
+  const today = new Date().toISOString().slice(0, 10)
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+
+  it('première session : initialise tout à 1', () => {
+    const r = computeSessionStats('', 0, 0, 0, 25)
+    expect(r.streak).toBe(1)
+    expect(r.todaySessions).toBe(1)
+    expect(r.totalFocusMinutes).toBe(25)
+    expect(r.lastSessionDate).toBe(today)
+  })
+
+  it('même jour : incrémente todaySessions, streak inchangé', () => {
+    const r = computeSessionStats(today, 3, 2, 50, 25)
+    expect(r.streak).toBe(3)
+    expect(r.todaySessions).toBe(3)
+    expect(r.totalFocusMinutes).toBe(75)
+    expect(r.lastSessionDate).toBe(today)
+  })
+
+  it('jour suivant : incrémente streak, remet todaySessions à 1', () => {
+    const r = computeSessionStats(yesterday, 3, 5, 100, 25)
+    expect(r.streak).toBe(4)
+    expect(r.todaySessions).toBe(1)
+    expect(r.totalFocusMinutes).toBe(125)
+    expect(r.lastSessionDate).toBe(today)
+  })
+
+  it('jour manqué : remet streak à 1', () => {
+    const r = computeSessionStats('2020-01-01', 5, 3, 100, 30)
+    expect(r.streak).toBe(1)
+    expect(r.todaySessions).toBe(1)
+    expect(r.totalFocusMinutes).toBe(130)
+    expect(r.lastSessionDate).toBe(today)
+  })
+})
+
+describe('formatFocusTime', () => {
+  it('formate < 60 min en Nm', () => expect(formatFocusTime(45)).toBe('45m'))
+  it('formate 0 en 0m', () => expect(formatFocusTime(0)).toBe('0m'))
+  it('formate 60 min en 1h 0m', () => expect(formatFocusTime(60)).toBe('1h 0m'))
+  it('formate 85 min en 1h 25m', () => expect(formatFocusTime(85)).toBe('1h 25m'))
+})
+
+describe('workReward', () => {
+  it('returns 15 at baseline 25 min', () => {
+    expect(workReward(25)).toBe(15)
+  })
+  it('returns less than 15 at 5 min', () => {
+    expect(workReward(5)).toBeLessThan(15)
+  })
+  it('returns more than 15 at 90 min', () => {
+    expect(workReward(90)).toBeGreaterThan(15)
+  })
+  it('has diminishing returns: 90min gives less than 3.6x of 25min', () => {
+    expect(workReward(90)).toBeLessThan(Math.round(15 * 3.6))
+  })
+})
+
+describe('breakReward', () => {
+  it('returns 2 at baseline 5 min', () => {
+    expect(breakReward(5)).toBe(2)
+  })
+  it('returns more than 2 at 30 min', () => {
+    expect(breakReward(30)).toBeGreaterThan(2)
+  })
+  it('returns less than 2 at 1 min', () => {
+    expect(breakReward(1)).toBeLessThan(2)
   })
 })

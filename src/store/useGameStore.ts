@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { v4 as uuidv4 } from 'uuid'
 import { DINOSAURS, DINO_MAP } from '../data/dinosaurs'
-import { calculatePending, rollRarity, type EggType } from '../utils/gameLogic'
+import { calculatePending, rollRarity, workReward, breakReward, computeSessionStats, type EggType } from '../utils/gameLogic'
 
 export interface DinoInstance {
   id: string
@@ -17,9 +17,6 @@ const EGG_PRICES: Record<EggType, number> = {
   legendary: 100,
 }
 
-export const WORK_DURATION = 25* 60 * 1000
-export const BREAK_DURATION = 5 * 60 * 1000
-
 interface GameState {
   docuPoints: number
   coins: number
@@ -29,6 +26,12 @@ interface GameState {
   remainingAtPause: number | null
   sessionsCompleted: number
   pendingReveal: DinoInstance | null
+  workMinutes: number
+  breakMinutes: number
+  todaySessions: number
+  streak: number
+  totalFocusMinutes: number
+  lastSessionDate: string
 }
 
 interface GameActions {
@@ -41,6 +44,8 @@ interface GameActions {
   collectDino: (instanceId: string) => void
   clearReveal: () => void
   cheat: () => void
+  setWorkMinutes: (m: number) => void
+  setBreakMinutes: (m: number) => void
 }
 
 export const useGameStore = create<GameState & GameActions>()(
@@ -54,10 +59,16 @@ export const useGameStore = create<GameState & GameActions>()(
       remainingAtPause: null,
       sessionsCompleted: 0,
       pendingReveal: null,
+      workMinutes: 25,
+      breakMinutes: 5,
+      todaySessions: 0,
+      streak: 0,
+      totalFocusMinutes: 0,
+      lastSessionDate: '',
 
       startTimer: () => {
-        const { remainingAtPause, pomodoroPhase } = get()
-        const duration = pomodoroPhase === 'break' ? BREAK_DURATION : WORK_DURATION
+        const { remainingAtPause, pomodoroPhase, workMinutes, breakMinutes } = get()
+        const duration = (pomodoroPhase === 'break' ? breakMinutes : workMinutes) * 60 * 1000
         if (remainingAtPause !== null) {
           set({
             timerStartedAt: Date.now() - (duration - remainingAtPause),
@@ -72,9 +83,9 @@ export const useGameStore = create<GameState & GameActions>()(
       },
 
       pauseTimer: () => {
-        const { timerStartedAt, pomodoroPhase } = get()
+        const { timerStartedAt, pomodoroPhase, workMinutes, breakMinutes } = get()
         if (timerStartedAt === null) return
-        const duration = pomodoroPhase === 'break' ? BREAK_DURATION : WORK_DURATION
+        const duration = (pomodoroPhase === 'break' ? breakMinutes : workMinutes) * 60 * 1000
         set({
           remainingAtPause: Math.max(0, duration - (Date.now() - timerStartedAt)),
           timerStartedAt: null,
@@ -86,19 +97,22 @@ export const useGameStore = create<GameState & GameActions>()(
       },
 
       completePomodoro: () => {
+        const { workMinutes, lastSessionDate, streak, todaySessions, totalFocusMinutes } = get()
+        const stats = computeSessionStats(lastSessionDate, streak, todaySessions, totalFocusMinutes, workMinutes)
         set((s) => ({
           pomodoroPhase: 'break',
-          docuPoints: s.docuPoints + 15,
+          docuPoints: s.docuPoints + workReward(s.workMinutes),
           sessionsCompleted: s.sessionsCompleted + 1,
           timerStartedAt: Date.now(),
           remainingAtPause: null,
+          ...stats,
         }))
       },
 
       completeBreak: () => {
         set((s) => ({
           pomodoroPhase: 'idle',
-          docuPoints: s.docuPoints + 2,
+          docuPoints: s.docuPoints + breakReward(s.breakMinutes),
           timerStartedAt: null,
           remainingAtPause: null,
         }))
@@ -142,6 +156,16 @@ export const useGameStore = create<GameState & GameActions>()(
       },
 
       clearReveal: () => set({ pendingReveal: null }),
+
+      setWorkMinutes: (m: number) => {
+        if (get().pomodoroPhase !== 'idle') return
+        set({ workMinutes: Math.max(5, Math.min(90, m)) })
+      },
+
+      setBreakMinutes: (m: number) => {
+        if (get().pomodoroPhase !== 'idle') return
+        set({ breakMinutes: Math.max(1, Math.min(30, m)) })
+      },
 
       cheat: () => set((s) => ({ docuPoints: s.docuPoints + 999, coins: s.coins + 9999 })),
     }),
