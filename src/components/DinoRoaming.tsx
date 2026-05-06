@@ -1,34 +1,55 @@
-import { useEffect, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useGameStore, type DinoInstance } from '../store/useGameStore'
+import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { type DinoInstance } from '../store/useGameStore'
 import { DINO_MAP } from '../data/dinosaurs'
 import { calculatePending } from '../utils/gameLogic'
 
-interface Props {
-  instance: DinoInstance
+import { DinoParasaurolophus } from '../sprites/DinoParasaurolophus'
+import { DinoStegosaurus }     from '../sprites/DinoStegosaurus'
+import { DinoAnkylosaurus }    from '../sprites/DinoAnkylosaurus'
+import { DinoTriceratops }     from '../sprites/DinoTriceratops'
+import { DinoVelociraptor }    from '../sprites/DinoVelociraptor'
+import { DinoSpinosaurus }     from '../sprites/DinoSpinosaurus'
+import { DinoTRex }            from '../sprites/DinoTRex'
+import { DinoBrachiosaurus }   from '../sprites/DinoBrachiosaurus'
+import { DinoPterodactyl }     from '../sprites/DinoPterodactyl'
+import { DinoAnkylosaurusClub } from '../sprites/DinoAnkylosaurusClub'
+
+type SpriteProps = { frame: 0 | 1 | 2; flipped?: boolean }
+type SpriteComponent = (props: SpriteProps) => React.JSX.Element
+
+const SPRITE_MAP: Record<string, SpriteComponent> = {
+  parasaurolophus: DinoParasaurolophus,
+  stegosaurus:     DinoStegosaurus,
+  ankylosaurus:    DinoAnkylosaurus,
+  triceratops:     DinoTriceratops,
+  velociraptor:    DinoVelociraptor,
+  spinosaurus:     DinoSpinosaurus,
+  trex:            DinoTRex,
+  brachiosaurus:   DinoBrachiosaurus,
+  pterodactyl:     DinoPterodactyl,
+  ankylosaurusclub: DinoAnkylosaurusClub,
 }
 
-interface Pos { x: number; y: number }
+interface Props { instance: DinoInstance }
+interface Pos  { x: number; y: number }
 
 function randomPos(): Pos {
-  return {
-    x: 10 + Math.random() * 75,
-    y: 10 + Math.random() * 70,
-  }
+  return { x: 12 + Math.random() * 72, y: 12 + Math.random() * 68 }
 }
 
 export default function DinoRoaming({ instance }: Props) {
-  const collectDino = useGameStore((s) => s.collectDino)
   const dino = DINO_MAP[instance.dinoId]
 
   const [pending, setPending] = useState(() =>
     calculatePending(instance.lastCollectedAt, dino.coinsPerHour),
   )
-  const [pos, setPos] = useState<Pos>(randomPos)
-  const [prevX, setPrevX] = useState(pos.x)
-  const [flyCoins, setFlyCoins] = useState<{ id: number; amount: number } | null>(null)
-  const flyId = useRef(0)
+  const [pos, setPos]       = useState<Pos>(randomPos)
+  const [prevX, setPrevX]   = useState(pos.x)
+  const [moving, setMoving] = useState(false)
+  const [frame, setFrame]   = useState<0 | 1 | 2>(0)
 
+  /* Pending update */
   useEffect(() => {
     const id = setInterval(
       () => setPending(calculatePending(instance.lastCollectedAt, dino.coinsPerHour)),
@@ -37,103 +58,85 @@ export default function DinoRoaming({ instance }: Props) {
     return () => clearInterval(id)
   }, [instance.lastCollectedAt, dino.coinsPerHour])
 
-  // Move slowly every 5–10s
+  /* Roam every 5–10s */
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>
+    let t: ReturnType<typeof setTimeout>
     const schedule = () => {
-      timeout = setTimeout(() => {
-        setPos((prev) => {
-          setPrevX(prev.x)
-          return randomPos()
-        })
+      t = setTimeout(() => {
+        setPos((prev) => { setPrevX(prev.x); return randomPos() })
+        setMoving(true)
+        setTimeout(() => setMoving(false), 5000)
         schedule()
       }, 5000 + Math.random() * 5000)
     }
     schedule()
-    return () => clearTimeout(timeout)
+    return () => clearTimeout(t)
   }, [])
 
-  const pendingDisplay = Math.floor(pending)
-  const hasPending = pendingDisplay > 0
-  const facingLeft = pos.x < prevX
+  /* Walk cycle: 0→1→2→1→0 at ~3 fps while moving */
+  useEffect(() => {
+    if (!moving) { setFrame(0); return }
+    const cycle: (0 | 1 | 2)[] = [0, 1, 2, 1]
+    let i = 0
+    const id = setInterval(() => {
+      setFrame(cycle[i % cycle.length])
+      i++
+    }, 220)
+    return () => clearInterval(id)
+  }, [moving])
 
-  const handleCollect = () => {
-    if (!hasPending) return
-    setFlyCoins({ id: ++flyId.current, amount: pendingDisplay })
-    collectDino(instance.id)
-    setTimeout(() => setFlyCoins(null), 900)
-  }
+  const hasPending = Math.floor(pending) > 0
+  const flipped    = pos.x < prevX
+  const Sprite     = SPRITE_MAP[instance.dinoId]
 
   return (
     <motion.div
       animate={{ left: `${pos.x}%`, top: `${pos.y}%` }}
       transition={{ duration: 5, ease: 'easeInOut' }}
       className="absolute flex flex-col items-center"
-      style={{ transform: 'translate(-50%, -50%)' }}
+      style={{ transform: 'translate(-50%, -50%)', zIndex: 10 }}
     >
-      {/* Coin bubble */}
-      <AnimatePresence>
-        {hasPending && (
-          <motion.button
-            key="bubble"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1, y: [0, -5, 0] }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ y: { repeat: Infinity, duration: 1.6, ease: 'easeInOut' } }}
-            onClick={handleCollect}
-            className="mb-1 px-2.5 py-1 rounded-full font-fredoka text-sm font-bold shadow-lg flex items-center gap-1 cursor-pointer whitespace-nowrap"
-            style={{
-              background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-              color: '#1a0a00',
-              boxShadow: '0 2px 12px rgba(251,191,36,0.6)',
-            }}
-          >
-            🪙 +{pendingDisplay.toLocaleString()}
-          </motion.button>
-        )}
-      </AnimatePresence>
+      {/* Shadow */}
+      <div style={{
+        position: 'absolute',
+        bottom: -4, left: '50%',
+        transform: 'translateX(-50%)',
+        width: 52, height: 12,
+        background: 'rgba(0,0,0,0.25)',
+        borderRadius: '50%',
+        filter: 'blur(5px)',
+        pointerEvents: 'none',
+      }} />
 
-      {/* Coins flying on collect */}
-      <AnimatePresence>
-        {flyCoins && (
-          <motion.div
-            key={flyCoins.id}
-            initial={{ y: 0, opacity: 1, scale: 1 }}
-            animate={{ y: -60, opacity: 0, scale: 1.4 }}
-            exit={{}}
-            transition={{ duration: 0.85, ease: 'easeOut' }}
-            className="absolute -top-6 font-fredoka text-base font-bold text-accent-amber pointer-events-none"
-            style={{ whiteSpace: 'nowrap' }}
-          >
-            +{flyCoins.amount.toLocaleString()} 🪙
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Dino */}
-      <motion.div
-        animate={{ y: [0, -5, 0] }}
-        transition={{ repeat: Infinity, duration: 2.4 + Math.random() * 0.8, ease: 'easeInOut' }}
-        onClick={handleCollect}
-        className="text-5xl select-none cursor-pointer"
+      {/* Sprite */}
+      <div
         style={{
-          display: 'inline-block',
-          transform: facingLeft ? 'scaleX(-1)' : 'scaleX(1)',
           filter: hasPending
-            ? 'drop-shadow(0 0 8px rgba(251,191,36,0.7))'
+            ? 'drop-shadow(0 0 10px rgba(251,191,36,0.85))'
             : 'drop-shadow(0 3px 6px rgba(0,0,0,0.5))',
-          transition: 'filter 0.4s, transform 0.3s',
+          transition: 'filter 0.5s',
+          cursor: 'default',
         }}
-        title={dino.name}
       >
-        {dino.emoji}
-      </motion.div>
+        {Sprite
+          ? <Sprite frame={frame} flipped={flipped} />
+          : <span style={{ fontSize: 48 }}>{dino.emoji}</span>
+        }
+      </div>
 
       {/* Name tag */}
-      <div
-        className="mt-1 px-1.5 py-0.5 rounded text-[10px] font-inter font-medium"
-        style={{ background: 'rgba(0,0,0,0.45)', color: dino.color }}
-      >
+      <div style={{
+        marginTop: 2,
+        padding: '1px 7px',
+        borderRadius: 6,
+        background: 'rgba(0,0,0,0.5)',
+        color: dino.color,
+        fontSize: 10,
+        fontFamily: 'Inter',
+        fontWeight: 600,
+        whiteSpace: 'nowrap',
+        pointerEvents: 'none',
+      }}>
         {dino.name}
       </div>
     </motion.div>
