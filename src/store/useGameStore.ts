@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { v4 as uuidv4 } from 'uuid'
 import { DINOSAURS, DINO_MAP } from '../data/dinosaurs'
-import { calculatePending, rollRarity, workReward, breakReward, computeSessionStats, type EggType } from '../utils/gameLogic'
+import { calculatePending, rollRarity, workReward, breakReward, computeSessionStats, slotUpgradeCost, yieldUpgradeCost, type EggType } from '../utils/gameLogic'
 
 export interface DinoInstance {
   id: string
@@ -32,6 +32,8 @@ interface GameState {
   streak: number
   totalFocusMinutes: number
   lastSessionDate: string
+  slotUpgradeLevel: number
+  yieldUpgradeLevel: number
 }
 
 interface GameActions {
@@ -47,6 +49,8 @@ interface GameActions {
   cheat: () => void
   setWorkMinutes: (m: number) => void
   setBreakMinutes: (m: number) => void
+  buySlotUpgrade: () => void
+  buyYieldUpgrade: () => void
 }
 
 export const useGameStore = create<GameState & GameActions>()(
@@ -66,6 +70,8 @@ export const useGameStore = create<GameState & GameActions>()(
       streak: 0,
       totalFocusMinutes: 0,
       lastSessionDate: '',
+      slotUpgradeLevel: 0,
+      yieldUpgradeLevel: 0,
 
       startTimer: () => {
         const { remainingAtPause, pomodoroPhase, workMinutes, breakMinutes } = get()
@@ -120,9 +126,11 @@ export const useGameStore = create<GameState & GameActions>()(
       },
 
       buyEgg: (eggType: EggType) => {
-        const { docuPoints } = get()
+        const { docuPoints, ownedDinos, slotUpgradeLevel } = get()
         const price = EGG_PRICES[eggType]
+        const maxDinos = 5 + slotUpgradeLevel * 2
         if (docuPoints < price) return
+        if (ownedDinos.length >= maxDinos) return
 
         const rarity = rollRarity(eggType)
         const pool = DINOSAURS.filter((d) => d.rarity === rarity)
@@ -143,10 +151,12 @@ export const useGameStore = create<GameState & GameActions>()(
       },
 
       collectDino: (instanceId: string) => {
-        const instance = get().ownedDinos.find((d) => d.id === instanceId)
+        const { ownedDinos, yieldUpgradeLevel } = get()
+        const instance = ownedDinos.find((d) => d.id === instanceId)
         if (!instance) return
         const dino = DINO_MAP[instance.dinoId]
-        const pending = Math.floor(calculatePending(instance.lastCollectedAt, dino.coinsPerHour))
+        const multiplier = 1 + yieldUpgradeLevel * 0.05
+        const pending = Math.floor(calculatePending(instance.lastCollectedAt, dino.coinsPerHour) * multiplier)
         const now = Date.now()
         set((s) => ({
           coins: s.coins + pending,
@@ -157,12 +167,13 @@ export const useGameStore = create<GameState & GameActions>()(
       },
 
       collectAll: () => {
-        const { ownedDinos } = get()
+        const { ownedDinos, yieldUpgradeLevel } = get()
+        const multiplier = 1 + yieldUpgradeLevel * 0.05
         const now = Date.now()
         let total = 0
         const updatedDinos = ownedDinos.map((d) => {
           const dino = DINO_MAP[d.dinoId]
-          const pending = Math.floor(calculatePending(d.lastCollectedAt, dino.coinsPerHour))
+          const pending = Math.floor(calculatePending(d.lastCollectedAt, dino.coinsPerHour) * multiplier)
           total += pending
           return { ...d, lastCollectedAt: now }
         })
@@ -180,6 +191,20 @@ export const useGameStore = create<GameState & GameActions>()(
       setBreakMinutes: (m: number) => {
         if (get().pomodoroPhase !== 'idle') return
         set({ breakMinutes: Math.max(1, Math.min(30, m)) })
+      },
+
+      buySlotUpgrade: () => {
+        const { coins, slotUpgradeLevel } = get()
+        const cost = slotUpgradeCost(slotUpgradeLevel)
+        if (coins < cost) return
+        set((s) => ({ coins: s.coins - cost, slotUpgradeLevel: s.slotUpgradeLevel + 1 }))
+      },
+
+      buyYieldUpgrade: () => {
+        const { coins, yieldUpgradeLevel } = get()
+        const cost = yieldUpgradeCost(yieldUpgradeLevel)
+        if (coins < cost) return
+        set((s) => ({ coins: s.coins - cost, yieldUpgradeLevel: s.yieldUpgradeLevel + 1 }))
       },
 
       cheat: () => set((s) => ({ docuPoints: s.docuPoints + 999, coins: s.coins + 9999 })),

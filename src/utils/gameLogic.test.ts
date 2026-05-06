@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { calculatePending, getRemaining, formatTime, rollRarity, workReward, breakReward, computeSessionStats, formatFocusTime } from './gameLogic'
+import { calculatePending, getRemaining, formatTime, rollRarity, workReward, breakReward, computeSessionStats, formatFocusTime, slotUpgradeCost, yieldUpgradeCost } from './gameLogic'
 
 describe('calculatePending', () => {
   it('retourne les coins gagnés depuis lastCollectedAt', () => {
@@ -117,6 +117,20 @@ describe('formatFocusTime', () => {
   it('formate 0 en 0m', () => expect(formatFocusTime(0)).toBe('0m'))
   it('formate 60 min en 1h 0m', () => expect(formatFocusTime(60)).toBe('1h 0m'))
   it('formate 85 min en 1h 25m', () => expect(formatFocusTime(85)).toBe('1h 25m'))
+})
+
+describe('slotUpgradeCost', () => {
+  it('niveau 0 coûte 500', () => expect(slotUpgradeCost(0)).toBe(500))
+  it('niveau 1 coûte 900', () => expect(slotUpgradeCost(1)).toBe(900))
+  it('niveau 2 coûte 1620', () => expect(slotUpgradeCost(2)).toBe(1620))
+  it('croît avec le niveau', () => expect(slotUpgradeCost(3)).toBeGreaterThan(slotUpgradeCost(2)))
+})
+
+describe('yieldUpgradeCost', () => {
+  it('niveau 0 coûte 1000', () => expect(yieldUpgradeCost(0)).toBe(1000))
+  it('niveau 1 coûte 1800', () => expect(yieldUpgradeCost(1)).toBe(1800))
+  it('niveau 2 coûte 3240', () => expect(yieldUpgradeCost(2)).toBe(3240))
+  it('croît avec le niveau', () => expect(yieldUpgradeCost(3)).toBeGreaterThan(yieldUpgradeCost(2)))
 })
 
 describe('workReward', () => {
