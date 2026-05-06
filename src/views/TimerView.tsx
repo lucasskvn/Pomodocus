@@ -47,6 +47,13 @@ export default function TimerView() {
         <PomodoroTimer />
         <StatsCards />
       </div>
+
+      {/* Spacer miroir — compense le panneau gauche pour centrer le timer */}
+      <motion.div
+        animate={{ width: settingsOpen ? SETTINGS_WIDTH : COLLAPSED_WIDTH }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="flex-shrink-0"
+      />
     </div>
   )
 }
