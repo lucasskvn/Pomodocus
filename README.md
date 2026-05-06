@@ -1,5 +1,9 @@
 # 🍅 Pomodocus
 
+<div align="center">
+  <img src="./public/sprites/ui/PomoDocus.png" alt="PomoDocus Logo" width="200" />
+</div>
+
 Une application gamifiée de **Pomodoro** avec des dinosaures collectibles ! Complète des sessions de focus, gagne des pièces, élève tes dinosaures et personnalise ton environnement.
 
 ## ✨ Features
