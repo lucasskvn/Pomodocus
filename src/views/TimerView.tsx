@@ -44,9 +44,11 @@ export default function TimerView() {
       </motion.div>
 
       {/* Zone centrale */}
-      <div className="flex flex-col items-center justify-center flex-1 min-w-0 gap-6 py-6 px-6 overflow-y-auto">
-        <PomodoroTimer />
-        <TaskList />
+      <div className="flex-1 min-w-0 flex items-center justify-center overflow-auto px-6">
+        <div className="flex flex-col items-center gap-6 py-6">
+          <PomodoroTimer />
+          <TaskList />
+        </div>
       </div>
 
       {/* Panneau droit — Stats */}

@@ -5,20 +5,20 @@ export default function PointsDisplay() {
   const coins = useGameStore((s) => s.coins)
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-[#0a1219] border-b border-white/10">
-      <div className="flex items-center gap-1.5">
-        <span className="text-lg">⚡</span>
+    <header className="flex items-center justify-between px-6 py-5 bg-[#0a1219] border-b border-white/10">
+      <div className="flex items-center gap-2">
+        <span className="text-2xl">⚡</span>
         <span className="font-fredoka text-lg font-semibold text-accent-green">
           {docuPoints} pts
         </span>
       </div>
 
-      <span className="font-fredoka text-xl font-bold text-white tracking-wide">
+      <span className="font-fredoka text-3xl font-bold text-white tracking-wide">
         PomoDocus
       </span>
 
-      <div className="flex items-center gap-1.5">
-        <span className="text-lg">🪙</span>
+      <div className="flex items-center gap-2">
+        <span className="text-2xl">🪙</span>
         <span className="font-fredoka text-lg font-semibold text-accent-amber">
           {coins.toLocaleString()}
         </span>
