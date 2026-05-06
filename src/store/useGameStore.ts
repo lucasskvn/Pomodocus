@@ -12,12 +12,12 @@ export interface DinoInstance {
 }
 
 const EGG_PRICES: Record<EggType, number> = {
-  common: 1,
-  rare: 1,
-  legendary: 1,
+  common: 15,
+  rare: 40,
+  legendary: 100,
 }
 
-export const WORK_DURATION = 1 * 60 * 1000
+export const WORK_DURATION = 25* 60 * 1000
 export const BREAK_DURATION = 5 * 60 * 1000
 
 interface GameState {
@@ -40,6 +40,7 @@ interface GameActions {
   buyEgg: (eggType: EggType) => void
   collectDino: (instanceId: string) => void
   clearReveal: () => void
+  cheat: () => void
 }
 
 export const useGameStore = create<GameState & GameActions>()(
@@ -141,6 +142,8 @@ export const useGameStore = create<GameState & GameActions>()(
       },
 
       clearReveal: () => set({ pendingReveal: null }),
+
+      cheat: () => set((s) => ({ docuPoints: s.docuPoints + 999, coins: s.coins + 9999 })),
     }),
     { name: 'pomodocus-store' },
   ),

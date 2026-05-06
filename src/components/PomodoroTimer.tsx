@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useGameStore, WORK_DURATION, BREAK_DURATION } from '../store/useGameStore'
 import { getRemaining, formatTime } from '../utils/gameLogic'
 
-const RADIUS = 54
+const RADIUS = 90
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 export default function PomodoroTimer() {
@@ -57,40 +57,53 @@ export default function PomodoroTimer() {
     pomodoroPhase === 'work' ? 'TRAVAIL' : pomodoroPhase === 'break' ? 'PAUSE' : 'PRÊT'
 
   return (
-    <div className="flex flex-col items-center gap-6 py-8">
+    <div className="flex flex-col items-center gap-8 py-10">
       <div className="flex items-center gap-2">
         <span className="text-white/50 font-inter text-sm">Session</span>
-        <span className="font-fredoka text-accent-green text-lg font-semibold">
+        <span className="font-fredoka text-accent-green text-xl font-semibold">
           #{sessionsCompleted + 1}
         </span>
       </div>
 
       <div className="relative">
-        <svg width="160" height="160" viewBox="0 0 160 160">
+        <svg width="260" height="260" viewBox="0 0 260 260">
+          {/* Glow effect */}
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          {/* Track */}
           <circle
-            cx="80" cy="80" r={RADIUS}
+            cx="130" cy="130" r={RADIUS}
             fill="none"
             stroke="#1e2d3d"
-            strokeWidth="8"
+            strokeWidth="10"
           />
+          {/* Progress */}
           <circle
-            cx="80" cy="80" r={RADIUS}
+            cx="130" cy="130" r={RADIUS}
             fill="none"
             stroke={phaseColor}
-            strokeWidth="8"
+            strokeWidth="10"
             strokeLinecap="round"
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={strokeDashoffset}
-            transform="rotate(-90 80 80)"
+            transform="rotate(-90 130 130)"
+            filter="url(#glow)"
             style={{ transition: 'stroke-dashoffset 0.5s linear' }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-fredoka text-4xl font-bold text-white">
+          <span className="font-fredoka text-6xl font-bold text-white tracking-tight">
             {formatTime(remaining)}
           </span>
           <span
-            className="font-inter text-xs font-semibold tracking-widest mt-1"
+            className="font-inter text-sm font-semibold tracking-widest mt-2"
             style={{ color: phaseColor }}
           >
             {phaseLabel}
@@ -98,16 +111,16 @@ export default function PomodoroTimer() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <button
           onClick={resetTimer}
-          className="px-4 py-2 rounded-full border border-white/20 text-white/60 font-inter text-sm hover:border-white/40 hover:text-white transition-colors"
+          className="px-5 py-2.5 rounded-full border border-white/20 text-white/60 font-inter text-sm hover:border-white/40 hover:text-white transition-colors"
         >
           Reset
         </button>
         <button
           onClick={isRunning ? pauseTimer : startTimer}
-          className="px-8 py-3 rounded-full font-fredoka text-lg font-semibold transition-opacity hover:opacity-90"
+          className="px-10 py-4 rounded-full font-fredoka text-xl font-semibold transition-opacity hover:opacity-90 shadow-lg"
           style={{ background: phaseColor, color: '#0f1923' }}
         >
           {isRunning ? 'Pause' : 'Start'}
