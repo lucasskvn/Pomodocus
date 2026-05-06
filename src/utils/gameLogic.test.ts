@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { calculatePending, getRemaining, formatTime, rollRarity, workReward, breakReward, computeSessionStats, formatFocusTime, slotUpgradeCost, yieldUpgradeCost } from './gameLogic'
+import { calculatePending, getRemaining, formatTime, rollRarity, workReward, breakReward, computeSessionStats, formatFocusTime, slotUpgradeCost, yieldUpgradeCost, dinoLevelUpCost, dinoSellPrice, dinoProductionMultiplier } from './gameLogic'
 
 describe('calculatePending', () => {
   it('retourne les coins gagnés depuis lastCollectedAt', () => {
@@ -158,4 +158,28 @@ describe('breakReward', () => {
   it('returns less than 2 at 1 min', () => {
     expect(breakReward(1)).toBeLessThan(2)
   })
+})
+
+describe('dinoLevelUpCost', () => {
+  it('common level 0 → 200', () => expect(dinoLevelUpCost('common', 0)).toBe(200))
+  it('common level 1 → 360', () => expect(dinoLevelUpCost('common', 1)).toBe(360))
+  it('rare level 0 → 500', () => expect(dinoLevelUpCost('rare', 0)).toBe(500))
+  it('epic level 0 → 1200', () => expect(dinoLevelUpCost('epic', 0)).toBe(1200))
+  it('legendary level 0 → 3000', () => expect(dinoLevelUpCost('legendary', 0)).toBe(3000))
+  it('level 10 → Infinity', () => expect(dinoLevelUpCost('common', 10)).toBe(Infinity))
+})
+
+describe('dinoSellPrice', () => {
+  it('common level 0 → 50', () => expect(dinoSellPrice('common', 0)).toBe(50))
+  it('rare level 0 → 150', () => expect(dinoSellPrice('rare', 0)).toBe(150))
+  it('epic level 0 → 400', () => expect(dinoSellPrice('epic', 0)).toBe(400))
+  it('legendary level 0 → 1000', () => expect(dinoSellPrice('legendary', 0)).toBe(1000))
+  it('common level 1 → 50 + 50% of 200 = 150', () => expect(dinoSellPrice('common', 1)).toBe(150))
+  it('common level 2 → 50 + 50% of (200+360) = 330', () => expect(dinoSellPrice('common', 2)).toBe(330))
+})
+
+describe('dinoProductionMultiplier', () => {
+  it('level 0 → 1.0', () => expect(dinoProductionMultiplier(0)).toBe(1.0))
+  it('level 5 → 1.5', () => expect(dinoProductionMultiplier(5)).toBe(1.5))
+  it('level 10 → 2.0', () => expect(dinoProductionMultiplier(10)).toBe(2.0))
 })

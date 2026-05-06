@@ -82,3 +82,32 @@ export function rollRarity(eggType: EggType): Rarity {
   }
   return probs[probs.length - 1][0]
 }
+
+const DINO_LEVEL_BASE: Record<Rarity, number> = {
+  common: 200,
+  rare: 500,
+  epic: 1200,
+  legendary: 3000,
+}
+
+const DINO_SELL_BASE: Record<Rarity, number> = {
+  common: 50,
+  rare: 150,
+  epic: 400,
+  legendary: 1000,
+}
+
+export function dinoLevelUpCost(rarity: Rarity, level: number): number {
+  if (level >= 10) return Infinity
+  return Math.round(DINO_LEVEL_BASE[rarity] * Math.pow(1.8, level))
+}
+
+export function dinoSellPrice(rarity: Rarity, level: number): number {
+  let invested = 0
+  for (let i = 0; i < level; i++) invested += dinoLevelUpCost(rarity, i)
+  return DINO_SELL_BASE[rarity] + Math.floor(invested * 0.5)
+}
+
+export function dinoProductionMultiplier(level: number): number {
+  return 1 + level * 0.1
+}

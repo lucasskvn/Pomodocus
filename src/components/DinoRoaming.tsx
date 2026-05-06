@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { type DinoInstance } from '../store/useGameStore'
 import { DINO_MAP } from '../data/dinosaurs'
-import { calculatePending } from '../utils/gameLogic'
+import { calculatePending, dinoProductionMultiplier } from '../utils/gameLogic'
 
 import { DinoParasaurolophus } from '../sprites/DinoParasaurolophus'
 import { DinoStegosaurus }     from '../sprites/DinoStegosaurus'
@@ -31,18 +31,23 @@ const SPRITE_MAP: Record<string, SpriteComponent> = {
   ankylosaurusclub: DinoAnkylosaurusClub,
 }
 
-interface Props { instance: DinoInstance }
+interface Props {
+  instance: DinoInstance
+  onClick: () => void
+}
 interface Pos  { x: number; y: number }
 
 function randomPos(): Pos {
   return { x: 12 + Math.random() * 72, y: 12 + Math.random() * 68 }
 }
 
-export default function DinoRoaming({ instance }: Props) {
+export default function DinoRoaming({ instance, onClick }: Props) {
   const dino = DINO_MAP[instance.dinoId]
+  const levelMult = dinoProductionMultiplier(instance.level ?? 0)
+  const effectiveRate = dino.coinsPerHour * levelMult
 
   const [pending, setPending] = useState(() =>
-    calculatePending(instance.lastCollectedAt, dino.coinsPerHour),
+    calculatePending(instance.lastCollectedAt, effectiveRate),
   )
   const [pos, setPos]       = useState<Pos>(randomPos)
   const [prevX, setPrevX]   = useState(pos.x)
@@ -52,11 +57,11 @@ export default function DinoRoaming({ instance }: Props) {
   /* Pending update */
   useEffect(() => {
     const id = setInterval(
-      () => setPending(calculatePending(instance.lastCollectedAt, dino.coinsPerHour)),
+      () => setPending(calculatePending(instance.lastCollectedAt, effectiveRate)),
       1000,
     )
     return () => clearInterval(id)
-  }, [instance.lastCollectedAt, dino.coinsPerHour])
+  }, [instance.lastCollectedAt, effectiveRate])
 
   /* Roam every 5–10s */
   useEffect(() => {
@@ -93,8 +98,9 @@ export default function DinoRoaming({ instance }: Props) {
     <motion.div
       animate={{ left: `${pos.x}%`, top: `${pos.y}%` }}
       transition={{ duration: 5, ease: 'easeInOut' }}
+      onClick={onClick}
       className="absolute flex flex-col items-center"
-      style={{ transform: 'translate(-50%, -50%)', zIndex: 10 }}
+      style={{ transform: 'translate(-50%, -50%)', zIndex: 10, cursor: 'pointer' }}
     >
       {/* Shadow */}
       <div style={{
@@ -137,7 +143,8 @@ export default function DinoRoaming({ instance }: Props) {
         whiteSpace: 'nowrap',
         pointerEvents: 'none',
       }}>
-        {dino.name}
+        {instance.nickname ?? dino.name}
+        {(instance.level ?? 0) > 0 && ` Lv.${instance.level}`}
       </div>
     </motion.div>
   )

@@ -2,13 +2,15 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { v4 as uuidv4 } from 'uuid'
 import { DINOSAURS, DINO_MAP } from '../data/dinosaurs'
-import { calculatePending, rollRarity, workReward, breakReward, computeSessionStats, slotUpgradeCost, yieldUpgradeCost, type EggType } from '../utils/gameLogic'
+import { calculatePending, rollRarity, workReward, breakReward, computeSessionStats, slotUpgradeCost, yieldUpgradeCost, dinoLevelUpCost, dinoSellPrice, dinoProductionMultiplier, type EggType } from '../utils/gameLogic'
 
 export interface DinoInstance {
   id: string
   dinoId: string
   obtainedAt: number
   lastCollectedAt: number
+  level: number
+  nickname: string | null
 }
 
 const EGG_PRICES: Record<EggType, number> = {
@@ -51,6 +53,9 @@ interface GameActions {
   setBreakMinutes: (m: number) => void
   buySlotUpgrade: () => void
   buyYieldUpgrade: () => void
+  levelUpDino: (instanceId: string) => void
+  sellDino: (instanceId: string) => void
+  renameDino: (instanceId: string, name: string) => void
 }
 
 export const useGameStore = create<GameState & GameActions>()(
@@ -141,6 +146,8 @@ export const useGameStore = create<GameState & GameActions>()(
           dinoId: dino.id,
           obtainedAt: now,
           lastCollectedAt: now,
+          level: 0,
+          nickname: null,
         }
 
         set((s) => ({
@@ -155,8 +162,9 @@ export const useGameStore = create<GameState & GameActions>()(
         const instance = ownedDinos.find((d) => d.id === instanceId)
         if (!instance) return
         const dino = DINO_MAP[instance.dinoId]
-        const multiplier = 1 + yieldUpgradeLevel * 0.05
-        const pending = Math.floor(calculatePending(instance.lastCollectedAt, dino.coinsPerHour) * multiplier)
+        const yieldMult = 1 + yieldUpgradeLevel * 0.05
+        const levelMult = dinoProductionMultiplier(instance.level ?? 0)
+        const pending = Math.floor(calculatePending(instance.lastCollectedAt, dino.coinsPerHour) * yieldMult * levelMult)
         const now = Date.now()
         set((s) => ({
           coins: s.coins + pending,
@@ -168,12 +176,13 @@ export const useGameStore = create<GameState & GameActions>()(
 
       collectAll: () => {
         const { ownedDinos, yieldUpgradeLevel } = get()
-        const multiplier = 1 + yieldUpgradeLevel * 0.05
+        const yieldMult = 1 + yieldUpgradeLevel * 0.05
         const now = Date.now()
         let total = 0
         const updatedDinos = ownedDinos.map((d) => {
           const dino = DINO_MAP[d.dinoId]
-          const pending = Math.floor(calculatePending(d.lastCollectedAt, dino.coinsPerHour) * multiplier)
+          const levelMult = dinoProductionMultiplier(d.level ?? 0)
+          const pending = Math.floor(calculatePending(d.lastCollectedAt, dino.coinsPerHour) * yieldMult * levelMult)
           total += pending
           return { ...d, lastCollectedAt: now }
         })
@@ -205,6 +214,45 @@ export const useGameStore = create<GameState & GameActions>()(
         const cost = yieldUpgradeCost(yieldUpgradeLevel)
         if (coins < cost) return
         set((s) => ({ coins: s.coins - cost, yieldUpgradeLevel: s.yieldUpgradeLevel + 1 }))
+      },
+
+      levelUpDino: (instanceId: string) => {
+        const { coins, ownedDinos } = get()
+        const instance = ownedDinos.find((d) => d.id === instanceId)
+        if (!instance) return
+        const dino = DINO_MAP[instance.dinoId]
+        const level = instance.level ?? 0
+        if (level >= 10) return
+        const cost = dinoLevelUpCost(dino.rarity, level)
+        if (coins < cost) return
+        set((s) => ({
+          coins: s.coins - cost,
+          ownedDinos: s.ownedDinos.map((d) =>
+            d.id === instanceId ? { ...d, level: (d.level ?? 0) + 1 } : d,
+          ),
+        }))
+      },
+
+      sellDino: (instanceId: string) => {
+        const { ownedDinos } = get()
+        const instance = ownedDinos.find((d) => d.id === instanceId)
+        if (!instance) return
+        const dino = DINO_MAP[instance.dinoId]
+        const price = dinoSellPrice(dino.rarity, instance.level ?? 0)
+        set((s) => ({
+          coins: s.coins + price,
+          ownedDinos: s.ownedDinos.filter((d) => d.id !== instanceId),
+        }))
+      },
+
+      renameDino: (instanceId: string, name: string) => {
+        if (!get().ownedDinos.find((d) => d.id === instanceId)) return
+        const trimmed = name.trim()
+        set((s) => ({
+          ownedDinos: s.ownedDinos.map((d) =>
+            d.id === instanceId ? { ...d, nickname: trimmed || null } : d,
+          ),
+        }))
       },
 
       cheat: () => set((s) => ({ docuPoints: s.docuPoints + 999, coins: s.coins + 9999 })),
