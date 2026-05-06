@@ -41,6 +41,8 @@ export default function DinoCard({ instance, index, onClick }: Props) {
   const dino = DINO_MAP[instance.dinoId]
   const SpriteComponent = SPRITE_MAP[instance.dinoId]
   const cap = 10 * dino.coinsPerHour
+  const level = instance.level ?? 0
+  const effectiveRate = dino.coinsPerHour * dinoProductionMultiplier(level)
 
   const [pending, setPending] = useState(() =>
     calculatePending(instance.lastCollectedAt, effectiveRate),

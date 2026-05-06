@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useGameStore } from '../store/useGameStore'
 import { getRemaining, formatTime } from '../utils/gameLogic'
+import { playDing } from '../utils/sound'
 
 const RADIUS = 130
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
@@ -26,6 +27,14 @@ export default function PomodoroTimer() {
     return duration
   })
 
+  const showNotification = (phase: 'work' | 'break') => {
+    if (Notification.permission !== 'granted') return
+    const body = phase === 'work'
+      ? 'Session terminée ! Lance ta pause 🎉'
+      : 'Pause terminée ! Retour au travail 💪'
+    new Notification('PomoDocus', { body, icon: '/vite.svg' })
+  }
+
   const completedRef = useRef(false)
 
   useEffect(() => {
@@ -41,6 +50,8 @@ export default function PomodoroTimer() {
       setRemaining(r)
       if (r === 0 && !completedRef.current) {
         completedRef.current = true
+        playDing()
+        showNotification(pomodoroPhase as 'work' | 'break')
         if (pomodoroPhase === 'work') completePomodoro()
         else if (pomodoroPhase === 'break') completeBreak()
       }
@@ -118,7 +129,12 @@ export default function PomodoroTimer() {
           Reset
         </button>
         <button
-          onClick={isRunning ? pauseTimer : startTimer}
+          onClick={isRunning ? pauseTimer : () => {
+            if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+              Notification.requestPermission()
+            }
+            startTimer()
+          }}
           className="px-10 py-4 rounded-full font-fredoka text-xl font-semibold transition-opacity hover:opacity-90 shadow-lg"
           style={{ background: phaseColor, color: '#0f1923' }}
         >

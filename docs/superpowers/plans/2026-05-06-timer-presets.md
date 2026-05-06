@@ -1,3 +1,145 @@
+# Timer Presets — Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+>
+> **Important:** Do NOT run any git commands (no git add, no git commit).
+
+**Goal:** Permettre à l'utilisateur d'appliquer des presets de timer (3 builtin + 3 slots custom nommés) depuis le panneau TimerSettings.
+
+**Architecture:** `TimerPreset` type + champ `presets` + 3 actions ajoutés au store Zustand. `TimerSettings.tsx` étendu avec une section presets en bas : chips builtin + slots custom avec formulaire inline pour créer/supprimer.
+
+**Tech Stack:** React 18, TypeScript strict, Zustand 4 (persist)
+
+---
+
+## File Map
+
+| Action | Fichier |
+|---|---|
+| Modify | `src/store/useGameStore.ts` — type `TimerPreset`, champ `presets`, actions `applyPreset`/`saveCustomPreset`/`deleteCustomPreset` |
+| Modify | `src/components/TimerSettings.tsx` — section presets avec chips et formulaire inline |
+
+---
+
+## Task 1: Étendre le store avec les presets
+
+**Files:**
+- Modify: `src/store/useGameStore.ts`
+
+Read the file before editing: `/home/virtualangel/delivery/perso/Pomodocus/src/store/useGameStore.ts`
+
+- [ ] **Step 1: Ajouter l'interface `TimerPreset` et l'exporter**
+
+Juste avant `export interface DinoInstance` (en haut du fichier), ajouter :
+
+```ts
+export interface TimerPreset {
+  id: string
+  name: string
+  workMinutes: number
+  breakMinutes: number
+  builtin?: true
+}
+```
+
+- [ ] **Step 2: Ajouter `presets` dans `GameState`**
+
+Dans l'interface `GameState`, après `yieldUpgradeLevel: number`, ajouter :
+
+```ts
+  presets: TimerPreset[]
+```
+
+- [ ] **Step 3: Ajouter les 3 actions dans `GameActions`**
+
+Dans l'interface `GameActions`, après `buyYieldUpgrade: () => void`, ajouter :
+
+```ts
+  applyPreset: (id: string) => void
+  saveCustomPreset: (slot: 0 | 1 | 2, name: string, workMinutes: number, breakMinutes: number) => void
+  deleteCustomPreset: (slot: 0 | 1 | 2) => void
+```
+
+- [ ] **Step 4: Ajouter la valeur initiale de `presets` dans le store**
+
+Dans le corps du store (`(set, get) => ({`), après `yieldUpgradeLevel: 0,`, ajouter :
+
+```ts
+      presets: [
+        { id: 'classic',  name: 'Classique', workMinutes: 25, breakMinutes: 5,  builtin: true },
+        { id: 'deepwork', name: 'Deep Work', workMinutes: 50, breakMinutes: 10, builtin: true },
+        { id: 'sprint',   name: 'Sprint',    workMinutes: 15, breakMinutes: 3,  builtin: true },
+        { id: 'custom-0', name: '',          workMinutes: 25, breakMinutes: 5  },
+        { id: 'custom-1', name: '',          workMinutes: 25, breakMinutes: 5  },
+        { id: 'custom-2', name: '',          workMinutes: 25, breakMinutes: 5  },
+      ],
+```
+
+- [ ] **Step 5: Implémenter les 3 nouvelles actions**
+
+Après l'action `buyYieldUpgrade` et avant `cheat`, ajouter :
+
+```ts
+      applyPreset: (id: string) => {
+        const { presets, pomodoroPhase } = get()
+        if (pomodoroPhase !== 'idle') return
+        const preset = presets.find((p) => p.id === id)
+        if (!preset) return
+        set({
+          workMinutes: Math.max(5, Math.min(90, preset.workMinutes)),
+          breakMinutes: Math.max(1, Math.min(30, preset.breakMinutes)),
+        })
+      },
+
+      saveCustomPreset: (slot: 0 | 1 | 2, name: string, workMinutes: number, breakMinutes: number) => {
+        const trimmed = name.trim()
+        if (!trimmed) return
+        set((s) => ({
+          presets: s.presets.map((p, i) =>
+            i === 3 + slot ? { ...p, name: trimmed, workMinutes, breakMinutes } : p,
+          ),
+        }))
+      },
+
+      deleteCustomPreset: (slot: 0 | 1 | 2) => {
+        set((s) => ({
+          presets: s.presets.map((p, i) =>
+            i === 3 + slot
+              ? { id: `custom-${slot}`, name: '', workMinutes: 25, breakMinutes: 5 }
+              : p,
+          ),
+        }))
+      },
+```
+
+- [ ] **Step 6: Vérifier TypeScript**
+
+```bash
+npx tsc --noEmit
+```
+
+Expected: No errors.
+
+- [ ] **Step 7: Vérifier les tests**
+
+```bash
+npx vitest run
+```
+
+Expected: All tests pass.
+
+---
+
+## Task 2: Section presets dans TimerSettings.tsx
+
+**Files:**
+- Modify: `src/components/TimerSettings.tsx`
+
+Read the file before editing: `/home/virtualangel/delivery/perso/Pomodocus/src/components/TimerSettings.tsx`
+
+- [ ] **Step 1: Remplacer le contenu entier de `TimerSettings.tsx`**
+
+```tsx
 import { useState } from 'react'
 import { useGameStore, type TimerPreset } from '../store/useGameStore'
 import { workReward, breakReward } from '../utils/gameLogic'
@@ -193,3 +335,50 @@ export default function TimerSettings() {
     </div>
   )
 }
+```
+
+- [ ] **Step 2: Vérifier TypeScript**
+
+```bash
+npx tsc --noEmit
+```
+
+Expected: No errors.
+
+- [ ] **Step 3: Vérifier les tests**
+
+```bash
+npx vitest run
+```
+
+Expected: All tests pass.
+
+- [ ] **Step 4: Test manuel**
+
+Lance l'app (`npm run dev`), ouvre le panneau réglages à gauche :
+- Les 3 presets builtin apparaissent (Classique, Deep Work, Sprint)
+- Clic "Deep Work" → sliders passent à 50/10, chip s'active (vert)
+- Clic "+ Sauvegarder" sur un slot vide → champ de nom apparaît
+- Saisir un nom, Entrée → slot rempli avec chip
+- Clic sur la chip → config appliquée
+- Clic ✕ → slot redevient vide
+- Timer en cours → tous les boutons désactivés
+
+---
+
+## Self-Review
+
+**Spec coverage:**
+- ✅ 3 presets builtin (Classique 25/5, Deep Work 50/10, Sprint 15/3)
+- ✅ 3 slots custom (vide = `name === ''`)
+- ✅ `applyPreset` respecte `pomodoroPhase === 'idle'` + clamping
+- ✅ `saveCustomPreset` guard `name.trim()` non vide
+- ✅ `deleteCustomPreset` remet les valeurs par défaut
+- ✅ Formulaire inline avec autoFocus, Enter/Escape, boutons ✓/✕
+- ✅ Un seul slot en édition à la fois (`editingSlot` state)
+- ✅ Chip active = border accent-green quand work+break correspondent aux sliders
+- ✅ Section désactivée quand timer en cours
+
+**Placeholder scan:** Aucun TBD. ✓
+
+**Type consistency:** `TimerPreset` exporté depuis store, importé dans TimerSettings. `slot: 0 | 1 | 2` cohérent entre actions et UI. ✓

@@ -4,6 +4,14 @@ import { v4 as uuidv4 } from 'uuid'
 import { DINOSAURS, DINO_MAP } from '../data/dinosaurs'
 import { calculatePending, rollRarity, workReward, breakReward, computeSessionStats, slotUpgradeCost, yieldUpgradeCost, dinoLevelUpCost, dinoSellPrice, dinoProductionMultiplier, type EggType } from '../utils/gameLogic'
 
+export interface TimerPreset {
+  id: string
+  name: string
+  workMinutes: number
+  breakMinutes: number
+  builtin?: true
+}
+
 export interface DinoInstance {
   id: string
   dinoId: string
@@ -36,6 +44,7 @@ interface GameState {
   lastSessionDate: string
   slotUpgradeLevel: number
   yieldUpgradeLevel: number
+  presets: TimerPreset[]
 }
 
 interface GameActions {
@@ -56,6 +65,9 @@ interface GameActions {
   levelUpDino: (instanceId: string) => void
   sellDino: (instanceId: string) => void
   renameDino: (instanceId: string, name: string) => void
+  applyPreset: (id: string) => void
+  saveCustomPreset: (slot: 0 | 1 | 2, name: string, workMinutes: number, breakMinutes: number) => void
+  deleteCustomPreset: (slot: 0 | 1 | 2) => void
 }
 
 export const useGameStore = create<GameState & GameActions>()(
@@ -77,6 +89,14 @@ export const useGameStore = create<GameState & GameActions>()(
       lastSessionDate: '',
       slotUpgradeLevel: 0,
       yieldUpgradeLevel: 0,
+      presets: [
+        { id: 'classic',  name: 'Classique', workMinutes: 25, breakMinutes: 5,  builtin: true as const },
+        { id: 'deepwork', name: 'Deep Work', workMinutes: 50, breakMinutes: 10, builtin: true as const },
+        { id: 'sprint',   name: 'Sprint',    workMinutes: 15, breakMinutes: 3,  builtin: true as const },
+        { id: 'custom-0', name: '',          workMinutes: 25, breakMinutes: 5  },
+        { id: 'custom-1', name: '',          workMinutes: 25, breakMinutes: 5  },
+        { id: 'custom-2', name: '',          workMinutes: 25, breakMinutes: 5  },
+      ],
 
       startTimer: () => {
         const { remainingAtPause, pomodoroPhase, workMinutes, breakMinutes } = get()
@@ -251,6 +271,37 @@ export const useGameStore = create<GameState & GameActions>()(
         set((s) => ({
           ownedDinos: s.ownedDinos.map((d) =>
             d.id === instanceId ? { ...d, nickname: trimmed || null } : d,
+          ),
+        }))
+      },
+
+      applyPreset: (id: string) => {
+        const { presets, pomodoroPhase } = get()
+        if (pomodoroPhase !== 'idle') return
+        const preset = presets.find((p) => p.id === id)
+        if (!preset) return
+        set({
+          workMinutes: Math.max(5, Math.min(90, preset.workMinutes)),
+          breakMinutes: Math.max(1, Math.min(30, preset.breakMinutes)),
+        })
+      },
+
+      saveCustomPreset: (slot: 0 | 1 | 2, name: string, workMinutes: number, breakMinutes: number) => {
+        const trimmed = name.trim()
+        if (!trimmed) return
+        set((s) => ({
+          presets: s.presets.map((p, i) =>
+            i === 3 + slot ? { ...p, name: trimmed, workMinutes, breakMinutes } : p,
+          ),
+        }))
+      },
+
+      deleteCustomPreset: (slot: 0 | 1 | 2) => {
+        set((s) => ({
+          presets: s.presets.map((p, i) =>
+            i === 3 + slot
+              ? { id: `custom-${slot}`, name: '', workMinutes: 25, breakMinutes: 5 }
+              : p,
           ),
         }))
       },
