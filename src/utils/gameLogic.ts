@@ -64,6 +64,14 @@ export function breakReward(minutes: number): number {
   return Math.round(2 * Math.pow(minutes / 5, 0.65))
 }
 
+export function slotUpgradeCost(level: number): number {
+  return Math.round(500 * Math.pow(1.8, level))
+}
+
+export function yieldUpgradeCost(level: number): number {
+  return Math.round(1000 * Math.pow(1.8, level))
+}
+
 export function rollRarity(eggType: EggType): Rarity {
   const probs = EGG_PROBABILITIES[eggType]
   const roll = Math.random()

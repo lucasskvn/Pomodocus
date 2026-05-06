@@ -9,14 +9,24 @@ const EGGS: { type: EggType; emoji: string; label: string; price: number; probs:
 
 export default function EggShop() {
   const docuPoints = useGameStore((s) => s.docuPoints)
+  const ownedDinos = useGameStore((s) => s.ownedDinos)
+  const slotUpgradeLevel = useGameStore((s) => s.slotUpgradeLevel)
   const buyEgg = useGameStore((s) => s.buyEgg)
 
+  const maxDinos = 5 + slotUpgradeLevel * 2
+  const parkFull = ownedDinos.length >= maxDinos
+
   return (
-    <div className="px-4 pb-6">
-      <h2 className="font-fredoka text-xl font-semibold text-white mb-3">Boutique</h2>
+    <div className="pb-2">
+      <h2 className="font-fredoka text-xl font-semibold text-white mb-1">Œufs</h2>
+      {parkFull && (
+        <p className="font-inter text-xs text-amber-400/80 mb-3">
+          Parc plein ({ownedDinos.length}/{maxDinos}) — achetez des emplacements ↓
+        </p>
+      )}
       <div className="flex flex-col gap-3">
         {EGGS.map((egg) => {
-          const canAfford = docuPoints >= egg.price
+          const canAfford = docuPoints >= egg.price && !parkFull
           return (
             <button
               key={egg.type}
@@ -34,8 +44,14 @@ export default function EggShop() {
                 <p className="font-inter text-xs text-white/50 mt-0.5">{egg.probs}</p>
               </div>
               <div className="flex items-center gap-1">
-                <span className="font-fredoka font-bold text-lg text-accent-green">{egg.price}</span>
-                <span className="font-inter text-xs text-white/50">pts</span>
+                {parkFull ? (
+                  <span className="font-inter text-xs text-amber-400/70">Parc plein</span>
+                ) : (
+                  <>
+                    <span className="font-fredoka font-bold text-lg text-accent-green">{egg.price}</span>
+                    <span className="font-inter text-xs text-white/50">pts</span>
+                  </>
+                )}
               </div>
             </button>
           )
