@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/useGameStore'
 import { DINO_MAP } from '../data/dinosaurs'
+import { THEMES, DECORATIONS } from '../data/cosmetics'
 import { calculatePending, dinoProductionMultiplier } from '../utils/gameLogic'
 import DinoRoaming from './DinoRoaming'
 import DinoModal from './DinoModal'
@@ -93,11 +94,22 @@ export default function DinoPark() {
   const ownedDinos  = useGameStore((s) => s.ownedDinos)
   const collectAll  = useGameStore((s) => s.collectAll)
   const yieldUpgradeLevel = useGameStore((s) => s.yieldUpgradeLevel)
+  const parkTheme = useGameStore((s) => s.parkTheme)
+  const ownedDecorations = useGameStore((s) => s.ownedDecorations)
 
   const [totalPending, setTotalPending] = useState(0)
   const [flyAmount, setFlyAmount]       = useState<number | null>(null)
   const [selectedDinoId, setSelectedDinoId] = useState<string | null>(null)
   const flyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [decorationPositions] = useState(() => {
+    // Générer des positions aléatoires pour les décorations une seule fois
+    return ownedDecorations.map(() => ({
+      top: Math.random() * 40 + 20,
+      left: Math.random() * 80 + 10,
+      rotation: Math.random() * 20 - 10,
+      scale: 0.8 + Math.random() * 0.4,
+    }))
+  })
 
   /* Recalculate total pending every second */
   useEffect(() => {
@@ -143,13 +155,20 @@ export default function DinoPark() {
     )
   }
 
+  const theme = THEMES[parkTheme] || THEMES.default
+
   return (
     <div
       className="relative overflow-hidden w-full"
       style={{ height: 'calc(100vh - 52px - 72px)' }}
     >
       {/* SVG background */}
-      <ParkBackground width={window.innerWidth} height={window.innerHeight - 52 - 72} />
+      <ParkBackground
+        width={window.innerWidth}
+        height={window.innerHeight - 52 - 72}
+        skyColor={theme.skyColor}
+        groundColor={theme.groundColor}
+      />
       {/* B — Subtle grid overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -184,6 +203,29 @@ export default function DinoPark() {
 
       {/* E — Pond */}
       <Pond />
+
+      {/* Décorations achetées */}
+      {ownedDecorations.map((decoId, idx) => {
+        const deco = DECORATIONS.find(d => d.id === decoId)
+        if (!deco) return null
+        const pos = decorationPositions[idx]
+        return (
+          <span
+            key={decoId}
+            className="absolute pointer-events-none select-none"
+            style={{
+              top: `${pos.top}%`,
+              left: `${pos.left}%`,
+              fontSize: 32,
+              opacity: 0.7,
+              transform: `rotate(${pos.rotation}deg) scale(${pos.scale})`,
+              zIndex: 8,
+            }}
+          >
+            {deco.emoji}
+          </span>
+        )
+      })}
 
       {/* E — Rocks */}
       <span className="absolute pointer-events-none select-none" style={{ top: '30%', left: '8%',  fontSize: 20, opacity: 0.55 }}>🪨</span>

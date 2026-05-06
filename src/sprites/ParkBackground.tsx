@@ -1,16 +1,32 @@
-export function ParkBackground({ width, height }: { width: number; height: number }) {
+interface ParkBackgroundProps {
+  width: number
+  height: number
+  skyColor?: string
+  groundColor?: string
+}
+
+export function ParkBackground({ width, height, skyColor = '#1e3a8a', groundColor = '#2d8a35' }: ParkBackgroundProps) {
+  // Lighten the colors for the gradient
+  const lightenColor = (color: string, amount: number = 0.2) => {
+    const hex = color.replace('#', '')
+    const r = Math.min(255, parseInt(hex.substring(0, 2), 16) + amount * 255)
+    const g = Math.min(255, parseInt(hex.substring(2, 4), 16) + amount * 255)
+    const b = Math.min(255, parseInt(hex.substring(4, 6), 16) + amount * 255)
+    return `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g).toString(16).padStart(2, '0')}${Math.round(b).toString(16).padStart(2, '0')}`
+  }
+
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0 }}>
       <defs>
         <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1e3a8a"/>
-          <stop offset="100%" stopColor="#3b82f6"/>
+          <stop offset="0%" stopColor={skyColor}/>
+          <stop offset="100%" stopColor={lightenColor(skyColor)}/>
         </linearGradient>
         <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#2d8a35"/>
-          <stop offset="40%" stopColor="#236b28"/>
-          <stop offset="100%" stopColor="#173f1c"/>
+          <stop offset="0%" stopColor={groundColor}/>
+          <stop offset="40%" stopColor={lightenColor(groundColor, -0.1)}/>
+          <stop offset="100%" stopColor={lightenColor(groundColor, -0.3)}/>
         </linearGradient>
         <radialGradient id="pondGrad" cx="50%" cy="40%" r="50%">
           <stop offset="0%" stopColor="#4ab8e8" stopOpacity="0.7"/>

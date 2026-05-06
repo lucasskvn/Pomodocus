@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { v4 as uuidv4 } from 'uuid'
 import { DINOSAURS, DINO_MAP } from '../data/dinosaurs'
 import { DAILY_QUESTS } from '../data/quests'
+import { THEMES, DECORATIONS, DINO_COSMETICS, type ThemeType } from '../data/cosmetics'
 import { calculatePending, rollRarity, workReward, breakReward, computeSessionStats, slotUpgradeCost, yieldUpgradeCost, dinoLevelUpCost, dinoSellPrice, dinoProductionMultiplier, type EggType } from '../utils/gameLogic'
 
 export interface TimerPreset {
@@ -20,6 +21,12 @@ export interface DinoInstance {
   lastCollectedAt: number
   level: number
   nickname: string | null
+}
+
+export interface SessionTask {
+  id: string
+  title: string
+  completed: boolean
 }
 
 const EGG_PRICES: Record<EggType, number> = {
@@ -51,6 +58,12 @@ interface GameState {
   lastQuestDate: string
   timerBackground: 'default' | 'gradient' | 'solid' | 'custom'
   timerBackgroundImage: string | null
+  parkTheme: ThemeType
+  ownedThemes: ThemeType[]
+  ownedDecorations: string[]
+  dinoCosmetics: Record<string, string[]>
+  activeCosmetics: Record<string, Record<string, string>>
+  sessionTasks: SessionTask[]
 }
 
 interface GameActions {
@@ -78,6 +91,14 @@ interface GameActions {
   checkQuestDateReset: () => void
   setTimerBackground: (bg: 'default' | 'gradient' | 'solid' | 'custom') => void
   setTimerBackgroundImage: (image: string | null) => void
+  buyTheme: (themeId: ThemeType) => void
+  buyDecoration: (decorationId: string) => void
+  buyDinoCosmetic: (cosmeticId: string, dinoInstanceId: string) => void
+  toggleDinoCosmetic: (dinoInstanceId: string, cosmeticType: string, cosmeticId: string) => void
+  addTask: (title: string) => void
+  toggleTask: (taskId: string) => void
+  removeTask: (taskId: string) => void
+  clearTasks: () => void
 }
 
 export const useGameStore = create<GameState & GameActions>()(
@@ -112,6 +133,12 @@ export const useGameStore = create<GameState & GameActions>()(
       lastQuestDate: '',
       timerBackground: 'default',
       timerBackgroundImage: null,
+      parkTheme: 'default',
+      ownedThemes: ['default'],
+      ownedDecorations: [],
+      dinoCosmetics: {},
+      activeCosmetics: {},
+      sessionTasks: [],
 
       startTimer: () => {
         const { remainingAtPause, pomodoroPhase, workMinutes, breakMinutes } = get()
@@ -370,6 +397,94 @@ export const useGameStore = create<GameState & GameActions>()(
 
       setTimerBackgroundImage: (image: string | null) => {
         set({ timerBackgroundImage: image })
+      },
+
+      buyTheme: (themeId: ThemeType) => {
+        const theme = THEMES[themeId]
+        if (!theme) return
+        const { coins, ownedThemes } = get()
+        const isOwned = ownedThemes.includes(themeId)
+
+        if (isOwned) {
+          set({ parkTheme: themeId })
+          return
+        }
+
+        if (coins < theme.price) return
+        set((s) => ({
+          coins: s.coins - theme.price,
+          ownedThemes: [...s.ownedThemes, themeId],
+          parkTheme: themeId,
+        }))
+      },
+
+      buyDecoration: (decorationId: string) => {
+        const decoration = DECORATIONS.find((d) => d.id === decorationId)
+        if (!decoration) return
+        const { coins } = get()
+        if (coins < decoration.price) return
+        set((s) => ({
+          coins: s.coins - decoration.price,
+          ownedDecorations: [...s.ownedDecorations, decorationId],
+        }))
+      },
+
+      buyDinoCosmetic: (cosmeticId: string, dinoInstanceId: string) => {
+        const cosmetic = DINO_COSMETICS.find((c) => c.id === cosmeticId)
+        if (!cosmetic) return
+        const { coins } = get()
+        if (coins < cosmetic.price) return
+        set((s) => {
+          const currentCosmetics = s.dinoCosmetics[dinoInstanceId] ?? []
+          return {
+            coins: s.coins - cosmetic.price,
+            dinoCosmetics: {
+              ...s.dinoCosmetics,
+              [dinoInstanceId]: [...currentCosmetics, cosmeticId],
+            },
+          }
+        })
+      },
+
+      toggleDinoCosmetic: (dinoInstanceId: string, cosmeticType: string, cosmeticId: string) => {
+        set((s) => ({
+          activeCosmetics: {
+            ...s.activeCosmetics,
+            [dinoInstanceId]: {
+              ...(s.activeCosmetics[dinoInstanceId] ?? {}),
+              [cosmeticType]: cosmeticId,
+            },
+          },
+        }))
+      },
+
+      addTask: (title: string) => {
+        const trimmed = title.trim()
+        if (!trimmed) return
+        const newTask: SessionTask = {
+          id: uuidv4(),
+          title: trimmed,
+          completed: false,
+        }
+        set((s) => ({ sessionTasks: [...s.sessionTasks, newTask] }))
+      },
+
+      toggleTask: (taskId: string) => {
+        set((s) => ({
+          sessionTasks: s.sessionTasks.map((t) =>
+            t.id === taskId ? { ...t, completed: !t.completed } : t,
+          ),
+        }))
+      },
+
+      removeTask: (taskId: string) => {
+        set((s) => ({
+          sessionTasks: s.sessionTasks.filter((t) => t.id !== taskId),
+        }))
+      },
+
+      clearTasks: () => {
+        set({ sessionTasks: [] })
       },
     }),
     { name: 'pomodocus-store' },

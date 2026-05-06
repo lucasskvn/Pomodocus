@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import PomodoroTimer from '../components/PomodoroTimer'
 import TimerSettings from '../components/TimerSettings'
 import StatsCards from '../components/StatsCards'
+import TaskList from '../components/TaskList'
 
 const SETTINGS_WIDTH = 130
 const COLLAPSED_WIDTH = 32
@@ -43,8 +44,9 @@ export default function TimerView() {
       </motion.div>
 
       {/* Zone centrale */}
-      <div className="flex flex-col items-center justify-center flex-1 min-w-0 gap-6 py-6">
+      <div className="flex flex-col items-center justify-center flex-1 min-w-0 gap-6 py-6 px-6 overflow-y-auto">
         <PomodoroTimer />
+        <TaskList />
       </div>
 
       {/* Panneau droit — Stats */}
