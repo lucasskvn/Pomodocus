@@ -2,6 +2,32 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/useGameStore'
 import { DINO_MAP, RARITY_LABEL } from '../data/dinosaurs'
 
+import { DinoParasaurolophus } from '../sprites/DinoParasaurolophus'
+import { DinoStegosaurus }     from '../sprites/DinoStegosaurus'
+import { DinoAnkylosaurus }    from '../sprites/DinoAnkylosaurus'
+import { DinoTriceratops }     from '../sprites/DinoTriceratops'
+import { DinoVelociraptor }    from '../sprites/DinoVelociraptor'
+import { DinoSpinosaurus }     from '../sprites/DinoSpinosaurus'
+import { DinoTRex }            from '../sprites/DinoTRex'
+import { DinoBrachiosaurus }   from '../sprites/DinoBrachiosaurus'
+import { DinoPterodactyl }     from '../sprites/DinoPterodactyl'
+import { DinoAnkylosaurusClub } from '../sprites/DinoAnkylosaurusClub'
+
+type SpriteComponent = (props: { frame: 0 | 1 | 2; flipped?: boolean }) => React.JSX.Element
+
+const SPRITE_MAP: Record<string, SpriteComponent> = {
+  parasaurolophus: DinoParasaurolophus,
+  stegosaurus:     DinoStegosaurus,
+  ankylosaurus:    DinoAnkylosaurus,
+  triceratops:     DinoTriceratops,
+  velociraptor:    DinoVelociraptor,
+  spinosaurus:     DinoSpinosaurus,
+  trex:            DinoTRex,
+  brachiosaurus:   DinoBrachiosaurus,
+  pterodactyl:     DinoPterodactyl,
+  ankylosaurusclub: DinoAnkylosaurusClub,
+}
+
 const RARITY_BG: Record<string, string> = {
   common: '#1e293b',
   rare: '#1e3a5f',
@@ -14,10 +40,11 @@ export default function EggReveal() {
   const clearReveal = useGameStore((s) => s.clearReveal)
 
   const dino = pendingReveal ? DINO_MAP[pendingReveal.dinoId] : null
+  const SpriteComponent = pendingReveal ? SPRITE_MAP[pendingReveal.dinoId] : null
 
   return (
     <AnimatePresence>
-      {pendingReveal && dino && (
+      {pendingReveal && dino && SpriteComponent && (
         <motion.div
           key="overlay"
           initial={{ opacity: 0 }}
@@ -50,7 +77,9 @@ export default function EggReveal() {
               transition={{ delay: 0.8, type: 'spring', stiffness: 400, damping: 15 }}
               className="flex flex-col items-center gap-2"
             >
-              <span className="text-7xl">{dino.emoji}</span>
+              <div className="w-32 h-32 flex items-center justify-center">
+                <SpriteComponent frame={0} />
+              </div>
               <span className="font-fredoka text-2xl font-bold text-white">{dino.name}</span>
               <span
                 className="font-inter text-xs font-semibold px-3 py-1 rounded-full"

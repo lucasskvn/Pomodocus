@@ -4,6 +4,32 @@ import { useGameStore, type DinoInstance } from '../store/useGameStore'
 import { DINO_MAP, RARITY_LABEL } from '../data/dinosaurs'
 import { calculatePending } from '../utils/gameLogic'
 
+import { DinoParasaurolophus } from '../sprites/DinoParasaurolophus'
+import { DinoStegosaurus }     from '../sprites/DinoStegosaurus'
+import { DinoAnkylosaurus }    from '../sprites/DinoAnkylosaurus'
+import { DinoTriceratops }     from '../sprites/DinoTriceratops'
+import { DinoVelociraptor }    from '../sprites/DinoVelociraptor'
+import { DinoSpinosaurus }     from '../sprites/DinoSpinosaurus'
+import { DinoTRex }            from '../sprites/DinoTRex'
+import { DinoBrachiosaurus }   from '../sprites/DinoBrachiosaurus'
+import { DinoPterodactyl }     from '../sprites/DinoPterodactyl'
+import { DinoAnkylosaurusClub } from '../sprites/DinoAnkylosaurusClub'
+
+type SpriteComponent = (props: { frame: 0 | 1 | 2; flipped?: boolean }) => React.JSX.Element
+
+const SPRITE_MAP: Record<string, SpriteComponent> = {
+  parasaurolophus: DinoParasaurolophus,
+  stegosaurus:     DinoStegosaurus,
+  ankylosaurus:    DinoAnkylosaurus,
+  triceratops:     DinoTriceratops,
+  velociraptor:    DinoVelociraptor,
+  spinosaurus:     DinoSpinosaurus,
+  trex:            DinoTRex,
+  brachiosaurus:   DinoBrachiosaurus,
+  pterodactyl:     DinoPterodactyl,
+  ankylosaurusclub: DinoAnkylosaurusClub,
+}
+
 interface Props {
   instance: DinoInstance
   index: number
@@ -12,6 +38,7 @@ interface Props {
 export default function DinoCard({ instance, index }: Props) {
   const collectDino = useGameStore((s) => s.collectDino)
   const dino = DINO_MAP[instance.dinoId]
+  const SpriteComponent = SPRITE_MAP[instance.dinoId]
   const cap = 10 * dino.coinsPerHour
 
   const [pending, setPending] = useState(() =>
@@ -38,7 +65,9 @@ export default function DinoCard({ instance, index }: Props) {
       style={{ background: `${dino.color}11`, borderColor: `${dino.color}33` }}
     >
       <div className="flex items-center gap-3">
-        <span className="text-4xl">{dino.emoji}</span>
+        <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+          {SpriteComponent && <SpriteComponent frame={0} />}
+        </div>
         <div>
           <p className="font-fredoka text-base font-semibold text-white">{dino.name}</p>
           <p className="font-inter text-xs font-semibold" style={{ color: dino.color }}>
