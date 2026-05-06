@@ -18,6 +18,8 @@ export const DINOSAURS: Dinosaur[] = [
   { id: 'spinosaurus', name: 'Spinosaure', rarity: 'rare', emoji: '🐊', coinsPerHour: 120, color: '#60a5fa' },
   { id: 'trex', name: 'T-Rex', rarity: 'epic', emoji: '🦖', coinsPerHour: 300, color: '#a855f7' },
   { id: 'brachiosaurus', name: 'Brachiosaure', rarity: 'legendary', emoji: '✨', coinsPerHour: 1000, color: '#f59e0b' },
+  { id: 'pterodactyl', name: 'Ptérodactyle', rarity: 'rare', emoji: '🦅', coinsPerHour: 90, color: '#818cf8' },
+  { id: 'ankylosaurusclub', name: 'Ankylosaure Club', rarity: 'epic', emoji: '🐢', coinsPerHour: 400, color: '#34d399' },
 ]
 
 export const DINO_MAP: Record<string, Dinosaur> = Object.fromEntries(

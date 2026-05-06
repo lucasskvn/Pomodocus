@@ -42,6 +42,7 @@ interface GameActions {
   completeBreak: () => void
   buyEgg: (eggType: EggType) => void
   collectDino: (instanceId: string) => void
+  collectAll: () => number
   clearReveal: () => void
   cheat: () => void
   setWorkMinutes: (m: number) => void
@@ -153,6 +154,20 @@ export const useGameStore = create<GameState & GameActions>()(
             d.id === instanceId ? { ...d, lastCollectedAt: now } : d,
           ),
         }))
+      },
+
+      collectAll: () => {
+        const { ownedDinos } = get()
+        const now = Date.now()
+        let total = 0
+        const updatedDinos = ownedDinos.map((d) => {
+          const dino = DINO_MAP[d.dinoId]
+          const pending = Math.floor(calculatePending(d.lastCollectedAt, dino.coinsPerHour))
+          total += pending
+          return { ...d, lastCollectedAt: now }
+        })
+        set((s) => ({ coins: s.coins + total, ownedDinos: updatedDinos }))
+        return total
       },
 
       clearReveal: () => set({ pendingReveal: null }),

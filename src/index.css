@@ -7,3 +7,25 @@ body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+@keyframes cloud-drift {
+  from { transform: translateX(-220px); }
+  to   { transform: translateX(calc(100vw + 220px)); }
+}
+
+@keyframes bird-fly {
+  0%   { transform: translateX(-60px) translateY(0px) scaleX(1); }
+  45%  { transform: translateX(45vw)  translateY(-30px) scaleX(1); }
+  50%  { transform: translateX(50vw)  translateY(-32px) scaleX(-1); }
+  100% { transform: translateX(110vw) translateY(-10px) scaleX(-1); }
+}
+
+@keyframes coin-bob {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-4px) scale(1.1); }
+}
+
+@keyframes pond-shimmer {
+  0%, 100% { opacity: 0.18; }
+  50%       { opacity: 0.28; }
+}
